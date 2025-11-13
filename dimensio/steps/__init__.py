@@ -3,7 +3,6 @@ from .dimension import (
     SHAPDimensionStep,
     ExpertDimensionStep,
     CorrelationDimensionStep,
-    ImportanceDimensionStep,
     AdaptiveDimensionStep,
 )
 
@@ -29,7 +28,6 @@ __all__ = [
     'SHAPDimensionStep',
     'ExpertDimensionStep',
     'CorrelationDimensionStep',
-    'ImportanceDimensionStep',
     'AdaptiveDimensionStep',
     
     # Projection steps
