@@ -56,6 +56,10 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - 修复工具模块中重复名称的 bug（logger => _logger）
 
+## [0.2.1] - 2025-11-17
+### Fixed
+- 修复反投影的bug
+
 ## [Unreleased]
 
 ### Planned

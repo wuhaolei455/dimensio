@@ -1152,6 +1152,11 @@ Lingching Tung - lingchingtung@stu.pku.edu.cn
 
 ## Changelog
 
+### 0.2.1 (2025-11-17)
+
+#### Fixed
+- Resolved back-projection bug to keep high/low dimensional mappings consistent
+
 ### 0.2.0 (2025-11-15)
 
 #### Added
