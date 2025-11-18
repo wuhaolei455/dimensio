@@ -143,42 +143,29 @@ const MOCK_DATA: CompressionHistory = {
 
 class ApiService {
   /**
-   * Get list of all experiments from the API
+   * Get compression history from the latest result
+   * Directly fetches from /api/compression/history endpoint
    */
-  async getExperiments() {
+  async getCompressionHistory(): Promise<CompressionHistory> {
+    // Fetch from API
     try {
-      const response = await axios.get(`${API_BASE_URL}/experiments`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching experiments:', error);
-      // Fallback to mock data if API is not available
-      console.warn('Using mock data as fallback');
-      return { success: true, count: 1, data: [{ experiment_id: 'mock' }] };
-    }
-  }
-
-  /**
-   * Get compression history for a specific experiment
-   * This is the main method used by the App component
-   */
-  async getExperimentHistory(experimentId: string): Promise<CompressionHistory> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/experiments/${experimentId}/history`);
+      const response = await axios.get(`${API_BASE_URL}/compression/history`);
 
       if (response.data.success && response.data.data) {
-        // API returns { success: true, data: { total_updates, events: [...] } }
-        const historyData = response.data.data;
+        // API returns { success: true, data: { result object } }
+        // We need to transform this to CompressionHistory format
+        const resultData = response.data.data;
 
-        // Transform API response to CompressionHistory format
-        return {
-          total_updates: historyData.total_updates,
-          history: historyData.events || historyData.history || []
-        };
+        // Create a compression history from result data
+        const history = this.transformResultToHistory(resultData);
+
+        return history;
       }
 
       throw new Error('Invalid API response format');
     } catch (error) {
-      console.error('Error fetching experiment history:', error);
+      console.error('Error fetching compression history:', error);
+
       // Fallback to mock data if API is not available
       console.warn('Using mock data as fallback');
       return MOCK_DATA;
@@ -186,48 +173,17 @@ class ApiService {
   }
 
   /**
-   * Get compression history - automatically fetches from first available experiment
-   * This is a convenience method that:
-   * 1. Gets list of experiments
-   * 2. Selects the first one
-   * 3. Fetches its history
+   * Transform result data to CompressionHistory format
    */
-  async getCompressionHistory(): Promise<CompressionHistory> {
-    try {
-      // First, get list of experiments
-      const experimentsResponse = await this.getExperiments();
-
-      if (experimentsResponse.success && experimentsResponse.data && experimentsResponse.data.length > 0) {
-        // Randomly select an experiment
-        const randomIndex = Math.floor(Math.random() * experimentsResponse.data.length);
-        const randomExperiment = experimentsResponse.data[randomIndex];
-        const experimentId = randomExperiment.experiment_id;
-
-        console.log(`Fetching history for experiment: ${experimentId}`);
-
-        // Fetch history for this experiment
-        return await this.getExperimentHistory(experimentId);
-      }
-
-      throw new Error('No experiments available');
-    } catch (error) {
-      console.error('Error in getCompressionHistory:', error);
-      console.warn('Using mock data as fallback');
-      return MOCK_DATA;
+  private transformResultToHistory(resultData: any): CompressionHistory {
+    // If the result already has the right format, return it
+    if (resultData.total_updates !== undefined && resultData.history) {
+      return resultData as CompressionHistory;
     }
-  }
 
-  /**
-   * Get visualizations metadata for an experiment
-   */
-  async getVisualizations(experimentId: string) {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/experiments/${experimentId}/visualizations`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching visualizations:', error);
-      return { success: false, data: [] };
-    }
+    // Otherwise, fallback to mock data
+    console.warn('Result data format not recognized, using mock data');
+    return MOCK_DATA;
   }
 }
 

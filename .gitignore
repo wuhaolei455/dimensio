@@ -145,3 +145,6 @@ example_*.py
 *.tmp
 *.temp
 *~
+
+data/
+result/
