@@ -61,8 +61,8 @@ const MultiTaskHeatmap: React.FC<MultiTaskHeatmapProps> = ({ paramNames, importa
         },
       },
       grid: {
-        left: '15%',
-        right: '5%',
+        left: '5%',
+        right: '12%',
         top: '10%',
         bottom: '15%',
         containLabel: true,
@@ -70,7 +70,11 @@ const MultiTaskHeatmap: React.FC<MultiTaskHeatmapProps> = ({ paramNames, importa
       xAxis: {
         type: 'category',
         data: shortParamNames,
-        axisLabel: { rotate: 45, fontSize: 9 },
+        axisLabel: {
+          rotate: 45,
+          fontSize: 9,
+          interval: 0,
+        },
         splitArea: { show: true },
       },
       yAxis: {

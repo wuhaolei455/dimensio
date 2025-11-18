@@ -44,6 +44,7 @@ const SourceSimilarities: React.FC<SourceSimilaritiesProps> = ({ similarities, t
         axisLabel: {
           rotate: 45,
           fontSize: 11,
+          interval: 0,
         },
         name: 'Source Tasks',
         nameLocation: 'middle',

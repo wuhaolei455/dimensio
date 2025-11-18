@@ -31,14 +31,20 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
       xAxis: {
         type: 'category',
         data: stepNames,
-        axisLabel: { rotate: 45, fontSize: 10 },
+        axisLabel: {
+          rotate: 45,
+          fontSize: 10,
+          interval: 0,
+          overflow: 'truncate',
+          width: 80,
+        },
       },
       yAxis: {
         type: 'value',
         name: 'Parameters',
         nameTextStyle: { fontWeight: 'bold' },
       },
-      grid: { left: '12%', right: '8%', bottom: '20%', top: '15%' },
+      grid: { left: '12%', right: '8%', bottom: '25%', top: '15%' },
       series: [
         {
           type: 'bar',
@@ -87,7 +93,13 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
       xAxis: {
         type: 'category',
         data: compressionRatios.map(r => r.name),
-        axisLabel: { rotate: 45, fontSize: 10 },
+        axisLabel: {
+          rotate: 45,
+          fontSize: 10,
+          interval: 0,
+          overflow: 'truncate',
+          width: 80,
+        },
       },
       yAxis: {
         type: 'value',
@@ -95,7 +107,7 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
         nameTextStyle: { fontWeight: 'bold' },
         max: 1,
       },
-      grid: { left: '12%', right: '8%', bottom: '20%', top: '15%' },
+      grid: { left: '12%', right: '8%', bottom: '25%', top: '15%' },
       series: [
         {
           type: 'bar',

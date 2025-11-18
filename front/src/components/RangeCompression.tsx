@@ -14,14 +14,16 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
 
   const getOption = () => {
     const compressedParams = step.compression_info!.compressed_params.slice(0, 30);
-    const paramNames = compressedParams.map(p => p.name.split('.').pop() || p.name);
+    // Keep full parameter names to avoid truncation
+    const paramNames = compressedParams.map(p => p.name);
 
     // Prepare data for visualization
     const chartData = compressedParams.map((param, idx) => {
-      const origMin = param.original_range[0];
-      const origMax = param.original_range[1];
-      const compMin = param.compressed_range[0];
-      const compMax = param.compressed_range[1];
+      // Handle null or undefined values with fallback
+      const origMin = param.original_range?.[0] ?? 0;
+      const origMax = param.original_range?.[1] ?? 1;
+      const compMin = param.compressed_range?.[0] ?? origMin;
+      const compMax = param.compressed_range?.[1] ?? origMax;
 
       const isQuantization = param.original_num_values !== undefined;
 
@@ -45,13 +47,13 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
         isQuantization,
         normCompStart,
         normCompEnd,
-        label: isQuantization
+        label: isQuantization && param.original_num_values != null && param.quantized_num_values != null
           ? `${param.original_num_values}→${param.quantized_num_values} values`
           : '',
       };
     });
 
-    // Custom series data
+    // Custom series data - show position and width of compressed range
     const originalBars = chartData.map(d => [0, d.idx, 1]);
     const compressedBars = chartData.map(d => [
       d.normCompStart,
@@ -69,10 +71,17 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
         trigger: 'item',
         formatter: (params: any) => {
           const data = chartData[params.value[1]];
+          if (!data) return '';
+
           if (params.seriesName === 'Original') {
-            return `${data.paramName}<br/>Original: [${data.origMin.toFixed(0)}, ${data.origMax.toFixed(0)}]`;
+            const origMinStr = data.origMin != null ? data.origMin.toFixed(0) : 'N/A';
+            const origMaxStr = data.origMax != null ? data.origMax.toFixed(0) : 'N/A';
+            return `${data.paramName}<br/>Original: [${origMinStr}, ${origMaxStr}]`;
           } else {
-            return `${data.paramName}<br/>Compressed: [${data.compMin.toFixed(2)}, ${data.compMax.toFixed(2)}]<br/>Ratio: ${(data.ratio * 100).toFixed(1)}%${data.label ? '<br/>' + data.label : ''}`;
+            const compMinStr = data.compMin != null ? data.compMin.toFixed(2) : 'N/A';
+            const compMaxStr = data.compMax != null ? data.compMax.toFixed(2) : 'N/A';
+            const ratioStr = data.ratio != null ? (data.ratio * 100).toFixed(1) : 'N/A';
+            return `${data.paramName}<br/>Compressed: [${compMinStr}, ${compMaxStr}]<br/>Ratio: ${ratioStr}%${data.label ? '<br/>' + data.label : ''}`;
           }
         },
       },
@@ -80,8 +89,41 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
         data: ['Original', 'Compressed'],
         top: 30,
       },
+      graphic: [
+        {
+          type: 'text',
+          right: 20,
+          top: 35,
+          style: {
+            text: 'Compression Ratio:',
+            fontSize: 11,
+            fontWeight: 'bold',
+            fill: '#333',
+          },
+          z: 100,
+        },
+        {
+          type: 'group',
+          right: 20,
+          top: 52,
+          children: [
+            { type: 'rect', shape: { x: 0, y: 0, width: 15, height: 10 }, style: { fill: '#67c23a' } },
+            { type: 'text', x: 20, y: 5, style: { text: '<50% (Optimal)', fontSize: 9, fill: '#666', verticalAlign: 'middle' } },
+
+            { type: 'rect', shape: { x: 0, y: 15, width: 15, height: 10 }, style: { fill: '#f0a020' } },
+            { type: 'text', x: 20, y: 20, style: { text: '50-70% (Good)', fontSize: 9, fill: '#666', verticalAlign: 'middle' } },
+
+            { type: 'rect', shape: { x: 0, y: 30, width: 15, height: 10 }, style: { fill: '#e6a23c' } },
+            { type: 'text', x: 20, y: 35, style: { text: '70-90% (Moderate)', fontSize: 9, fill: '#666', verticalAlign: 'middle' } },
+
+            { type: 'rect', shape: { x: 0, y: 45, width: 15, height: 10 }, style: { fill: '#f56c6c' } },
+            { type: 'text', x: 20, y: 50, style: { text: '>90% (High)', fontSize: 9, fill: '#666', verticalAlign: 'middle' } },
+          ],
+          z: 100,
+        },
+      ],
       grid: {
-        left: '15%',
+        left: '5%',
         right: '20%',
         top: 60,
         bottom: 30,
@@ -99,7 +141,11 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
       yAxis: {
         type: 'category',
         data: paramNames,
-        axisLabel: { fontSize: 10 },
+        axisLabel: {
+          fontSize: 10,
+          overflow: 'none',
+          width: 200,
+        },
         inverse: false,
       },
       series: [
@@ -199,16 +245,25 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
             const yValue = api.value(1);
             const pos = api.coord([0.5, yValue]);
 
+            // Handle null values gracefully
+            const compMinStr = data.compMin != null ? data.compMin.toFixed(0) : 'N/A';
+            const compMaxStr = data.compMax != null ? data.compMax.toFixed(0) : 'N/A';
+            const displayText = (data.compMin != null && data.compMax != null)
+              ? `→[${compMinStr}, ${compMaxStr}]`
+              : '';
+
             return {
               type: 'text',
               x: pos[0],
-              y: pos[1] + 15,
+              y: pos[1],
               style: {
-                text: `→[${data.compMin.toFixed(0)}, ${data.compMax.toFixed(0)}]`,
+                text: displayText,
                 fontSize: 11,
                 fontWeight: 'bold',
                 fill: '#000',
                 fontStyle: data.isQuantization ? 'italic' : 'normal',
+                align: 'center',
+                verticalAlign: 'middle',
               },
             };
           },
@@ -224,12 +279,14 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
             const yValue = api.value(1);
             const pos = api.coord([-0.05, yValue]);
 
+            const text = data.origMin != null ? data.origMin.toFixed(0) : '';
+
             return {
               type: 'text',
               x: pos[0],
               y: pos[1] - 10,
               style: {
-                text: data.origMin.toFixed(0),
+                text: text,
                 fontSize: 8,
                 fill: '#999',
                 align: 'right',
@@ -248,12 +305,14 @@ const RangeCompression: React.FC<RangeCompressionProps> = ({ step, stepIndex }) 
             const yValue = api.value(1);
             const pos = api.coord([1.05, yValue]);
 
+            const text = data.origMax != null ? data.origMax.toFixed(0) : '';
+
             return {
               type: 'text',
               x: pos[0],
               y: pos[1] - 10,
               style: {
-                text: data.origMax.toFixed(0),
+                text: text,
                 fontSize: 8,
                 fill: '#999',
                 align: 'left',

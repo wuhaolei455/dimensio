@@ -198,9 +198,10 @@ class ApiService {
       const experimentsResponse = await this.getExperiments();
 
       if (experimentsResponse.success && experimentsResponse.data && experimentsResponse.data.length > 0) {
-        // Use the first experiment
-        const firstExperiment = experimentsResponse.data[0];
-        const experimentId = firstExperiment.experiment_id;
+        // Randomly select an experiment
+        const randomIndex = Math.floor(Math.random() * experimentsResponse.data.length);
+        const randomExperiment = experimentsResponse.data[randomIndex];
+        const experimentId = randomExperiment.experiment_id;
 
         console.log(`Fetching history for experiment: ${experimentId}`);
 

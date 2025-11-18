@@ -38,8 +38,8 @@ const ParameterImportance: React.FC<ParameterImportanceProps> = ({
         },
       },
       grid: {
-        left: '25%',
-        right: '10%',
+        left: '5%',
+        right: '15%',
         top: '10%',
         bottom: '5%',
         containLabel: true,
