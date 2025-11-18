@@ -10,12 +10,47 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
   const event = data.history[0];
   const pipeline = event.pipeline;
 
+  // Filter out steps that don't actually change dimensions or are placeholders
+  // A valid step should have meaningful output and not be a "none" step
+  const activeSteps = pipeline.steps.filter((step, index) => {
+    // Get input dimension from previous step or original space
+    const inputDim = index === 0
+      ? event.spaces.original.n_parameters
+      : pipeline.steps[index - 1].output_space_params;
+    const outputDim = step.output_space_params;
+
+    // Filter out steps with these characteristics:
+    // 1. Contains "none" in name (obvious placeholder)
+    const isNoneStep = step.name.toLowerCase().includes('none') ||
+                       step.name.toLowerCase() === 'nonecompressionstep';
+
+    // 2. Projection steps that don't change dimensions are useless
+    //    BUT: Range compression steps can keep the same dimensions (they compress ranges, not dimensions)
+    //    AND: Steps with compression_info are meaningful (they have actual compression data)
+    const hasCompressionInfo = step.compression_info &&
+                               (step.compression_info.compressed_params?.length > 0 ||
+                                step.compression_info.avg_compression_ratio !== undefined);
+
+    const isProjectionStep = step.name.toLowerCase().includes('projection') ||
+                             step.name.toLowerCase().includes('transformative') ||
+                             step.type.toLowerCase().includes('projection');
+
+    // A step is useless if it's a projection that doesn't change dimensions AND doesn't have compression info
+    const isUselessProjection = isProjectionStep && inputDim === outputDim && !hasCompressionInfo;
+
+    // Keep steps that are:
+    // - Not none steps
+    // - Not useless projections
+    // - Have valid output dimensions
+    return !isNoneStep && !isUselessProjection && outputDim > 0;
+  });
+
   // Panel 1: Dimension Reduction Across Steps
   const getDimensionReductionOption = () => {
-    const stepNames = ['Original', ...pipeline.steps.map(s => s.name)];
+    const stepNames = ['Original', ...activeSteps.map(s => s.name)];
     const dimensions = [
       event.spaces.original.n_parameters,
-      ...pipeline.steps.map(s => s.output_space_params),
+      ...activeSteps.map(s => s.output_space_params),
     ];
 
     return {
@@ -69,10 +104,10 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
   const getCompressionRatioOption = () => {
     const dimensions = [
       event.spaces.original.n_parameters,
-      ...pipeline.steps.map(s => s.output_space_params),
+      ...activeSteps.map(s => s.output_space_params),
     ];
     const compressionRatios = dimensions.slice(1).map((dim, idx) => ({
-      name: pipeline.steps[idx].name,
+      name: activeSteps[idx].name,
       ratio: dim / dimensions[0],
     }));
 
@@ -129,14 +164,19 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
     };
   };
 
-  // Panel 3: Range Compression Statistics
+  // Panel 3: Range/Quantization Compression Statistics
   const getRangeCompressionStatsOption = () => {
-    const rangeStep = pipeline.steps.find(s => s.compression_info);
+    // Find any step with compression_info (range, quantization, etc.)
+    const compressionStep = activeSteps.find(s =>
+      s.compression_info &&
+      s.compression_info.compressed_params &&
+      s.compression_info.compressed_params.length > 0
+    );
 
-    if (!rangeStep || !rangeStep.compression_info) {
+    if (!compressionStep || !compressionStep.compression_info) {
       return {
         title: {
-          text: 'Range Compression Statistics',
+          text: 'Range/Quantization Compression Statistics',
           left: 'center',
           textStyle: { fontWeight: 'bold', fontSize: 14 },
         },
@@ -145,7 +185,7 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
           left: 'center',
           top: 'middle',
           style: {
-            text: 'No range compression data',
+            text: 'No range/quantization compression data',
             fontSize: 14,
             fill: '#999',
           },
@@ -153,12 +193,12 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
       };
     }
 
-    const nCompressed = rangeStep.compression_info.compressed_params.length;
-    const nUnchanged = rangeStep.compression_info.unchanged_params.length;
+    const nCompressed = compressionStep.compression_info.compressed_params?.length || 0;
+    const nUnchanged = compressionStep.compression_info.unchanged_params?.length || 0;
 
     return {
       title: {
-        text: 'Range Compression Statistics',
+        text: 'Range/Quantization Compression Statistics',
         left: 'center',
         textStyle: { fontWeight: 'bold', fontSize: 14 },
       },
@@ -172,7 +212,7 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
       },
       xAxis: {
         type: 'category',
-        data: [`Step ${rangeStep.step_index + 1}\n${rangeStep.name}`],
+        data: [`Step ${compressionStep.step_index + 1}\n${compressionStep.name}`],
       },
       yAxis: {
         type: 'value',
@@ -211,7 +251,7 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
   const getSummaryText = () => {
     const dimensions = [
       event.spaces.original.n_parameters,
-      ...pipeline.steps.map(s => s.output_space_params),
+      ...activeSteps.map(s => s.output_space_params),
     ];
 
     let text = `Compression Summary\n${'='.repeat(40)}\n\n`;
@@ -219,9 +259,9 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
     text += `Final sample space: ${event.spaces.sample.n_parameters}\n`;
     text += `Final surrogate space: ${event.spaces.surrogate.n_parameters}\n`;
     text += `Overall compression: ${(event.spaces.surrogate.n_parameters / dimensions[0] * 100).toFixed(1)}%\n\n`;
-    text += `Steps:\n`;
+    text += `Active Steps: ${activeSteps.length}\n`;
 
-    pipeline.steps.forEach((step, i) => {
+    activeSteps.forEach((step, i) => {
       const inputDim = dimensions[i];
       const outputDim = dimensions[i + 1];
       const dimRatio = outputDim / inputDim;
@@ -229,7 +269,7 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
       text += `${i + 1}. ${step.name}\n`;
       text += `   ${inputDim} → ${outputDim} (${(dimRatio * 100).toFixed(1)}%)\n`;
 
-      if (step.compression_info) {
+      if (step.compression_info && step.compression_info.avg_compression_ratio) {
         text += `   Effective: ${(step.compression_info.avg_compression_ratio * 100).toFixed(1)}%\n`;
       }
     });

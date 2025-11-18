@@ -68,6 +68,12 @@ export interface Pipeline {
   sampling_strategy?: string;
 }
 
+export interface PerformanceMetrics {
+  multi_task_importances?: number[][]; // [n_tasks, n_params]
+  task_names?: string[];
+  source_similarities?: Record<string, number>; // {task_id: similarity}
+}
+
 export interface CompressionEvent {
   timestamp: string;
   event: EventType;
@@ -79,7 +85,7 @@ export interface CompressionEvent {
   };
   pipeline: Pipeline;
   update_reason?: string;
-  performance_metrics?: Record<string, any>;
+  performance_metrics?: PerformanceMetrics;
 }
 
 export interface CompressionHistory {

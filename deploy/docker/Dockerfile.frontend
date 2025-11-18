@@ -1,0 +1,54 @@
+# Multi-stage build for Frontend
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy all frontend source
+COPY front/ ./
+
+# Show what we copied
+RUN echo "=== Files copied ===" && ls -la
+
+# Configure npm registry mirror
+RUN npm config set registry https://registry.npmmirror.com
+
+# Install dependencies (separate step to catch errors)
+RUN echo "=== Installing dependencies ===" && \
+    npm install --legacy-peer-deps
+
+# Verify node_modules exists
+RUN echo "=== Checking node_modules ===" && \
+    ls -la node_modules/ | head -20 && \
+    test -d node_modules/webpack && echo "✓ webpack found" && \
+    test -d node_modules/babel-loader && echo "✓ babel-loader found"
+
+# Show package.json scripts
+RUN echo "=== Package.json scripts ===" && \
+    cat package.json | grep -A 5 '"scripts"'
+
+# Build frontend (separate step to see full output)
+RUN echo "=== Starting webpack build ===" && \
+    npm run build
+
+# Verify build succeeded
+RUN echo "=== Build verification ===" && \
+    ls -lah && \
+    echo "--- Checking dist directory ---" && \
+    test -d dist && echo "✓ dist exists" || (echo "✗ dist missing!" && exit 1) && \
+    ls -lh dist/ && \
+    test -f dist/index.html && echo "✓ index.html found" || (echo "✗ index.html missing!" && exit 1)
+
+# Production stage with Nginx
+FROM nginx:alpine
+
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
