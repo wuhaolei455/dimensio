@@ -179,7 +179,9 @@ def example_3_kde_range():
     print("Example 3: KDE Range Compression (retain all dimensions)")
     print("="*80)
     
+
     config_space = create_sample_config_space()
+    
     history = generate_mock_history(config_space, n_samples=60, objective_func=spark_objective)
     
     steps = [

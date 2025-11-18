@@ -139,6 +139,7 @@ def generate_mock_history(
         num_constraints=0,
         config_space=config_space
     )
+    history.save_json(f'{task_id}.json')
     
     if objective_func is None:
         objective_func = simple_objective
