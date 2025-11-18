@@ -11,4 +11,3 @@ matplotlib>=3.3.0
 
 # OpenBox dependency (for History and space utilities)
 openbox>=0.8.0
-
