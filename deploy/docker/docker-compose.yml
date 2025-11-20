@@ -4,7 +4,6 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.backend
-      pull_policy: never
     container_name: dimensio-backend
     restart: unless-stopped
     ports:
@@ -30,7 +29,6 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.frontend
-      pull_policy: never
     container_name: dimensio-frontend
     restart: unless-stopped
     ports:

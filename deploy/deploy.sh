@@ -288,8 +288,9 @@ build_and_start() {
     cd "$PROJECT_DIR/deploy/docker"
 
     print_info "开始构建镜像..."
-    # 使用 --no-cache 清除构建缓存，但由于设置了 pull_policy: never，不会尝试拉取远程镜像
-    if ! docker compose build --no-cache; then
+    # 使用 DOCKER_BUILDKIT=0 禁用 BuildKit，避免检查远程镜像元数据
+    # --no-cache 清除构建缓存
+    if ! DOCKER_BUILDKIT=0 docker compose build --no-cache --pull never; then
         print_error "镜像构建失败"
         print_info "如果是因为拉取基础镜像失败，请检查网络连接或运行:"
         print_info "  cd $PROJECT_DIR/deploy/docker && bash pull-image.sh python:3.9-slim node:18-alpine nginx:alpine"
