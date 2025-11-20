@@ -87,13 +87,18 @@ class CompressionRunner:
             self.logger.info(f"Creating data directory: {self.data_dir}")
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        # Clean and recreate result directory
+        # Clean result directory (but don't delete the directory itself for Docker volume compatibility)
         if self.result_dir.exists():
-            self.logger.info(f"Cleaning result directory: {self.result_dir}")
-            shutil.rmtree(self.result_dir)
-
-        self.logger.info(f"Creating result directory: {self.result_dir}")
-        self.result_dir.mkdir(parents=True, exist_ok=True)
+            self.logger.info(f"Cleaning result directory contents: {self.result_dir}")
+            # Remove all contents but keep the directory (important for Docker volumes)
+            for item in self.result_dir.iterdir():
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
+        else:
+            self.logger.info(f"Creating result directory: {self.result_dir}")
+            self.result_dir.mkdir(parents=True, exist_ok=True)
 
 
         # Check for required files

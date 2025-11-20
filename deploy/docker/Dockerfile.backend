@@ -1,0 +1,51 @@
+# Backend Dockerfile for Dimensio API
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Configure Debian mirror for faster package downloads (China)
+RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources || \
+    (echo "deb https://mirrors.ustc.edu.cn/debian/ trixie main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+     echo "deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+     echo "deb https://mirrors.ustc.edu.cn/debian-security trixie-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list)
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
+COPY requirements.txt /app/
+COPY api/requirements.txt /app/api-requirements.txt
+
+# Install Python dependencies with pip mirror
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+    pip config set install.trusted-host mirrors.aliyun.com && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r api-requirements.txt
+
+# Copy application code
+COPY . /app/
+
+# Create necessary directories
+RUN mkdir -p /app/data /app/result /app/logs
+
+# Make scripts executable
+RUN chmod +x /app/run_compression.sh
+
+# Expose port
+EXPOSE 5000
+
+# Set environment variables
+ENV FLASK_APP=api/server.py
+ENV PYTHONUNBUFFERED=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5000/')" || exit 1
+
+# Start Flask server
+CMD ["python", "api/server.py"]

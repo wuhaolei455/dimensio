@@ -15,10 +15,19 @@ from flask_cors import CORS
 # No need to import compress_from_config directly
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+        "expose_headers": ["Content-Type", "X-Total-Count"],
+        "supports_credentials": True,
+        "max_age": 3600
+    }
+})
 
 # Configuration
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 ALLOWED_EXTENSIONS = {'json'}
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -525,6 +534,14 @@ def upload_files():
 
 # Error Handlers
 
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({
+        'success': False,
+        'error': 'File too large. Maximum file size is 100MB.'
+    }), 413
+
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'success': False, 'error': 'Endpoint not found'}), 404
@@ -544,8 +561,8 @@ if __name__ == '__main__':
     print(f"\n📁 Data directory: {DATA_DIR.absolute()}")
     print(f"📁 Result directory: {RESULT_DIR.absolute()}")
 
-    print(f"\n🚀 Starting server on http://127.0.0.1:5000")
-    print(f"   API documentation: http://127.0.0.1:5000/")
+    print(f"\n🚀 Starting server on http://0.0.0.0:5000")
+    print(f"   API documentation: http://0.0.0.0:5000/")
     print("=" * 80 + "\n")
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

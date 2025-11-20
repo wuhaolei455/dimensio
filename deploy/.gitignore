@@ -1,0 +1,11 @@
+# 环境变量文件
+.env
+
+# 备份文件
+backups/
+*.tar.gz
+*.zip
+
+# 临时文件
+*.tmp
+*.log

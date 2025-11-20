@@ -74,7 +74,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
         formData.append('history', file);
       });
 
-      const response = await fetch('http://127.0.0.1:5000/api/upload', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
