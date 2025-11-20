@@ -6,13 +6,6 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.backend
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-      x-bake:
-        no-cache: true
-        pull: true
-        platforms:
-          - linux/amd64
     container_name: dimensio-backend
     restart: unless-stopped
     ports:
@@ -38,13 +31,6 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.frontend
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-      x-bake:
-        no-cache: true
-        pull: true
-        platforms:
-          - linux/amd64
     container_name: dimensio-frontend
     restart: unless-stopped
     ports:
