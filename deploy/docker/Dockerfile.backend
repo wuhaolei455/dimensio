@@ -1,5 +1,5 @@
 # Backend Dockerfile for Dimensio API
-FROM dockerproxy.com/library/python:3.9-slim
+FROM registry.cn-hangzhou.aliyuncs.com/library/python:3.9-slim
 
 # Set working directory
 WORKDIR /app
