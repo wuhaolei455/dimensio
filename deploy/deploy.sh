@@ -253,14 +253,49 @@ clean_old_images() {
     print_success "镜像清理完成"
 }
 
+# 预拉取基础镜像（如果已存在则跳过）
+pre_pull_images() {
+    print_info "预拉取基础镜像（如果已存在则跳过）..."
+
+    cd "$PROJECT_DIR/deploy/docker"
+
+    # 检查并拉取基础镜像
+    local base_images=("python:3.9-slim" "node:18-alpine" "nginx:alpine")
+
+    print_info "检查并拉取基础镜像..."
+    for image in "${base_images[@]}"; do
+        if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
+            print_success "镜像已存在，跳过拉取: $image"
+        else
+            print_info "拉取镜像: $image"
+            if docker pull "$image"; then
+                print_success "镜像拉取成功: $image"
+            else
+                print_error "镜像拉取失败: $image"
+                print_warning "如果网络不通，可以尝试使用镜像源手动拉取"
+                return 1
+            fi
+        fi
+    done
+
+    print_success "所有基础镜像已就绪，构建时将跳过元数据加载步骤"
+}
+
 # 构建并启动容器
 build_and_start() {
     print_info "构建 Docker 镜像..."
 
     cd "$PROJECT_DIR/deploy/docker"
 
-    # 构建镜像
-    docker compose build --no-cache
+    print_info "开始构建镜像..."
+    # 使用 --no-cache 清除构建缓存，但由于设置了 pull_policy: never，不会尝试拉取远程镜像
+    if ! docker compose build --no-cache; then
+        print_error "镜像构建失败"
+        print_info "如果是因为拉取基础镜像失败，请检查网络连接或运行:"
+        print_info "  cd $PROJECT_DIR/deploy/docker && bash pull-image.sh python:3.9-slim node:18-alpine nginx:alpine"
+        return 1
+    fi
+
     print_success "镜像构建完成"
 
     print_info "启动容器..."
@@ -397,6 +432,7 @@ main() {
     create_directories
     stop_old_containers
     clean_old_images
+    pre_pull_images  # 预先拉取基础镜像
     build_and_start
     check_containers
     test_services
