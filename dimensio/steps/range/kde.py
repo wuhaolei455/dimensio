@@ -72,8 +72,12 @@ class KDEBoundaryRangeStep(BoundaryRangeStep):
         median_top_ratio = self.source_top_ratio
         
         compressed_ranges = {}
-        
+        fixed_params = self._get_fixed_params()
         for param_name in numeric_param_names:
+            if param_name in fixed_params:
+                logger.debug(f"Skipping range compression for fixed parameter '{param_name}'")
+                continue
+            
             weighted_values = []
             weights = []
             

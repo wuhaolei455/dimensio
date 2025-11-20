@@ -40,9 +40,14 @@ class ExpertRangeStep(RangeCompressionStep):
         valid_ranges = {}
         param_names = input_space.get_hyperparameter_names()
         
+        fixed_params = self._get_fixed_params()
+        
         for param_name, (min_val, max_val) in self.expert_ranges.items():
             if param_name not in param_names:
                 logger.warning(f"Expert parameter '{param_name}' not found in configuration space")
+                continue
+            if param_name in fixed_params:
+                logger.debug(f"Skipping range compression for fixed parameter '{param_name}'")
                 continue
 
             if min_val >= max_val:
