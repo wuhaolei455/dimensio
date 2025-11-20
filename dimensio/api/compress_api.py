@@ -28,6 +28,10 @@ from .step_factory import (
     validate_step_string,
     create_steps_from_strings,
 )
+from .filling_factory import (
+    create_filling_from_string,
+    create_filling_from_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -212,8 +216,15 @@ def compress_from_config(
                         'range_step': str,      # e.g., 'r_kde', 'r_none'
                         'projection_step': str, # e.g., 'p_quant', 'p_none'
                         'step_params': {        # optional, parameter overrides
-                            'd_shap': {'topk': 10},
+                            'd_shap': {'topk': 10, 'exclude_params': ['param1']},
                             'r_kde': {'source_top_ratio': 0.5}
+                        },
+                        'filling_config': {     # optional, filling strategy config
+                            'type': 'default',
+                            'fixed_values': {   # optional, fixed parameter values
+                                'param1': value1,
+                                'param2': value2
+                            }
                         }
                     }
         history_data: Required history data. List[List[Dict]] format:
@@ -255,10 +266,19 @@ def compress_from_config(
     steps = create_steps_from_strings(step_strings, step_params=step_params)
     logger.info(f"Created {len(steps)} compression steps")
     
+    # create filling strategy from config if provided
+    filling_strategy = None
+    filling_config = step_config.get('filling_config')
+    if filling_config:
+        filling_strategy = create_filling_from_config(filling_config)
+        logger.info(f"Created filling strategy: {type(filling_strategy).__name__}")
+        if filling_strategy.fixed_values:
+            logger.info(f"Fixed values: {list(filling_strategy.fixed_values.keys())}")
 
     compressor = Compressor(
         config_space=config_space,
         steps=steps,
+        filling_strategy=filling_strategy,
         save_compression_info=save_info,
         output_dir=output_dir
     )
