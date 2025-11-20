@@ -249,6 +249,88 @@ curl http://8.140.237.35/api/compression/history
 
 ## ⚠️ 故障排除
 
+### 0. Docker 镜像拉取失败（重要）
+
+**问题**:
+- `dial tcp: i/o timeout`
+- `failed to resolve source metadata`
+- `not found` 或 `connection reset by peer`
+
+这是在中国大陆访问 Docker Hub 时的常见问题。
+
+**解决方案**:
+
+```bash
+# 方法一：使用修复脚本（推荐）
+cd /root/dimensio/deploy
+sudo bash fix-docker-registry.sh
+
+# 等待 Docker 重启完成后，重新运行部署脚本
+sudo bash deploy.sh
+```
+
+**方法二：手动配置镜像加速器**
+
+```bash
+# 1. 编辑 Docker 配置文件
+sudo vim /etc/docker/daemon.json
+
+# 2. 添加以下内容（如果文件已存在，合并配置）
+{
+  "registry-mirrors": [
+    "https://docker.1panel.live",
+    "https://docker.1ms.run",
+    "https://docker.nju.edu.cn",
+    "https://docker.mirrors.sjtug.sjtu.edu.cn",
+    "https://hub.rat.dev",
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.net",
+    "https://docker.mirrors.ustc.edu.cn"
+  ],
+  "max-concurrent-downloads": 10
+}
+
+# 3. 重启 Docker 服务
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 4. 验证配置
+docker info | grep -A 10 "Registry Mirrors"
+
+# 5. 重新运行部署脚本
+cd /root/dimensio/deploy
+sudo bash deploy.sh
+```
+
+**方法三：手动拉取镜像**
+
+如果镜像源仍然不可用，可以尝试手动拉取：
+
+```bash
+# 拉取所需的基础镜像
+docker pull python:3.9-slim
+docker pull node:18-alpine
+docker pull nginx:alpine
+
+# 然后重新构建
+cd /root/dimensio/deploy/docker
+docker compose build
+docker compose up -d
+```
+
+**可用的镜像源列表**（按推荐顺序）：
+
+| 镜像源 | 地址 | 说明 |
+|--------|------|------|
+| 1Panel | https://docker.1panel.live | 限制中国地区，速度快 |
+| 毫秒镜像 | https://docker.1ms.run | 稳定可靠 |
+| 南京大学 | https://docker.nju.edu.cn | 教育网友好 |
+| 上海交大 | https://docker.mirrors.sjtug.sjtu.edu.cn | 速度快 |
+| Rat Dev | https://hub.rat.dev | 新兴镜像源 |
+| DaoCloud | https://docker.m.daocloud.io | 老牌镜像源 |
+| Docker Proxy | https://dockerproxy.net | 备选方案 |
+| 中科大 | https://docker.mirrors.ustc.edu.cn | 稳定性好 |
+
 ### 1. 端口冲突
 
 **问题**: 80 端口被占用

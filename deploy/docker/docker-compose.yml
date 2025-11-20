@@ -42,7 +42,7 @@ services:
 
   # Nginx Reverse Proxy
   nginx:
-    image: docker-0.unsee.tech/library/nginx:alpine
+    image: nginx:alpine
     container_name: dimensio-nginx
     restart: unless-stopped
     ports:

@@ -40,11 +40,16 @@ print_info "创建镜像加速器配置..."
 cat > /etc/docker/daemon.json <<'EOF'
 {
   "registry-mirrors": [
-    "https://docker.mirrors.ustc.edu.cn",
-    "https://hub-mirror.c.163.com",
-    "https://mirror.baidubce.com",
-    "https://docker.m.daocloud.io"
+    "https://docker.1panel.live",
+    "https://docker.1ms.run",
+    "https://docker.nju.edu.cn",
+    "https://docker.mirrors.sjtug.sjtu.edu.cn",
+    "https://hub.rat.dev",
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.net",
+    "https://docker.mirrors.ustc.edu.cn"
   ],
+  "max-concurrent-downloads": 10,
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "100m",
