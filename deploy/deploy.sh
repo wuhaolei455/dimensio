@@ -57,7 +57,8 @@ else
     # 默认配置
     DEPLOY_PATH=${DEPLOY_PATH:-/var/www/dimensio}
     SERVER_NAME=${SERVER_NAME:-localhost}
-    PYTHON_CMD=${PYTHON_CMD:-python3}
+    PYTHON_CMD=${PYTHON_CMD:-python3.8}
+    PYTHON_VERSION=${PYTHON_VERSION:-3.8.20}
     API_PORT=${API_PORT:-5000}
     API_WORKERS=${API_WORKERS:-4}
     API_TIMEOUT=${API_TIMEOUT:-600}
@@ -93,7 +94,33 @@ check_dependencies() {
 
     # 检查 Python
     if ! command -v "$PYTHON_CMD" &> /dev/null; then
-        missing_deps+=("$PYTHON_CMD")
+        log_error "未找到 $PYTHON_CMD"
+        log_info ""
+        log_info "请先安装 Python ${PYTHON_VERSION}:"
+        echo "  cd deploy"
+        echo "  sudo ./install-python38.sh"
+        echo ""
+        log_info "或者手动安装:"
+        echo "  Ubuntu: sudo apt install python3.8 python3.8-venv python3.8-dev"
+        echo "  从源码: 查看 install-python38.sh 脚本"
+        exit 1
+    else
+        # 验证 Python 版本
+        local current_version=$($PYTHON_CMD --version 2>&1 | awk '{print $2}')
+        log_info "检测到 Python 版本: $current_version"
+
+        # 检查主版本号
+        local major_minor=$(echo $current_version | cut -d. -f1,2)
+        local required_major_minor=$(echo $PYTHON_VERSION | cut -d. -f1,2)
+
+        if [ "$major_minor" != "$required_major_minor" ]; then
+            log_warning "Python 版本不匹配"
+            log_warning "需要: Python $required_major_minor.x"
+            log_warning "当前: Python $current_version"
+            log_info "建议安装 Python ${PYTHON_VERSION}"
+        else
+            log_success "Python 版本符合要求: $current_version"
+        fi
     fi
 
     # 检查 Node.js

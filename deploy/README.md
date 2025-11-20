@@ -25,7 +25,10 @@
 - CentOS 8 或更高版本（需要调整部分命令）
 
 ### 软件依赖
-- **Python**: 3.7+
+- **Python**: 3.8.20 (强烈推荐) 或 3.8+
+  - ⭐ Python 3.8 具有最佳兼容性
+  - ⚠️ Python 3.11+ 可能遇到 scipy 编译问题
+  - 📖 详见 [Python 3.8 使用指南](./PYTHON38.md)
 - **Node.js**: 14+ 和 npm
 - **Nginx**: 1.18+
 - **Git**: 任意版本
@@ -40,11 +43,19 @@
 sudo apt update && sudo apt upgrade -y
 
 # 安装基础依赖
-sudo apt install -y python3 python3-pip python3-venv \
-                    nodejs npm nginx git curl
+sudo apt install -y nodejs npm nginx git curl \
+                    software-properties-common
+
+# 安装 Python 3.8（推荐）
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.8 python3.8-venv python3.8-dev
+
+# 或使用自动安装脚本
+# cd dimensio/deploy && sudo ./install-python38.sh
 
 # 验证安装
-python3 --version
+python3.8 --version  # 应显示 3.8.x
 node --version
 npm --version
 nginx -v

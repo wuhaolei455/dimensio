@@ -14,8 +14,13 @@
 
 ```bash
 # 安装基础依赖
-sudo apt update && sudo apt install -y python3 python3-pip python3-venv \
-                                       nodejs npm nginx git curl
+sudo apt update && sudo apt install -y nodejs npm nginx git curl \
+                                       software-properties-common
+
+# 安装 Python 3.8（推荐）
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.8 python3.8-venv python3.8-dev
 
 # 克隆项目（或使用 rsync 上传）
 cd /tmp
