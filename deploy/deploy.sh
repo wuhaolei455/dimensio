@@ -122,6 +122,53 @@ install_docker() {
     print_success "Docker 安装完成: $DOCKER_VERSION"
 }
 
+# 配置 Docker 镜像加速器
+configure_docker_registry() {
+    print_info "配置 Docker 镜像加速器..."
+
+    # 创建 Docker 配置目录
+    mkdir -p /etc/docker
+
+    # 备份原有配置
+    if [ -f /etc/docker/daemon.json ]; then
+        if ! grep -q "registry-mirrors" /etc/docker/daemon.json; then
+            print_warning "备份原有配置文件..."
+            cp /etc/docker/daemon.json /etc/docker/daemon.json.bak.$(date +%Y%m%d%H%M%S)
+        else
+            print_info "镜像加速器已配置，跳过"
+            return 0
+        fi
+    fi
+
+    # 创建新的 daemon.json 配置文件
+    cat > /etc/docker/daemon.json <<'EOF'
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://hub-mirror.c.163.com",
+    "https://mirror.baidubce.com",
+    "https://docker.m.daocloud.io"
+  ],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+    print_success "镜像加速器配置完成"
+
+    # 重启 Docker 服务
+    print_info "重启 Docker 服务使配置生效..."
+    systemctl daemon-reload
+    systemctl restart docker
+    sleep 3
+
+    print_success "Docker 服务已重启"
+}
+
 # 安装 Docker Compose
 install_docker_compose() {
     print_info "检查 Docker Compose 是否已安装..."
@@ -344,6 +391,7 @@ main() {
     check_os
     update_system
     install_docker
+    configure_docker_registry  # 配置镜像加速器
     install_docker_compose
     check_project_dir
     create_directories
