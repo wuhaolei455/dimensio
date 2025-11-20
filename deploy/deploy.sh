@@ -57,7 +57,7 @@ else
     # 默认配置
     DEPLOY_PATH=${DEPLOY_PATH:-/root/workspace/dimensio}
     SERVER_NAME=${SERVER_NAME:-localhost}
-    PYTHON_CMD=${PYTHON_CMD:-python3}
+    PYTHON_CMD=${PYTHON_CMD:-python3.8}
     API_PORT=${API_PORT:-5000}
     API_WORKERS=${API_WORKERS:-4}
     API_TIMEOUT=${API_TIMEOUT:-600}
@@ -100,6 +100,23 @@ check_dependencies() {
     if ! command -v npm &> /dev/null; then
         missing_deps+=("npm")
     fi
+
+    # 检查 Python 3.8
+    if ! command -v python3.8 &> /dev/null; then
+        log_error "Python 3.8 未安装"
+        log_info "请先运行以下命令安装 Python 3.8："
+        echo "  cd $SCRIPT_DIR"
+        echo "  sudo ./install-python38.sh"
+        echo ""
+        log_info "或者使用 PPA 快速安装 (Ubuntu):"
+        echo "  sudo add-apt-repository -y ppa:deadsnakes/ppa"
+        echo "  sudo apt update"
+        echo "  sudo apt install -y python3.8 python3.8-venv python3.8-dev"
+        exit 1
+    fi
+
+    local py38_version=$(python3.8 --version 2>&1)
+    log_success "✓ Python 3.8: $py38_version"
 
     if [ ${#missing_deps[@]} -ne 0 ]; then
         log_error "缺少以下依赖: ${missing_deps[*]}"
