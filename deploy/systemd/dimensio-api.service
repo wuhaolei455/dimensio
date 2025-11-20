@@ -6,11 +6,11 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/dimensio
-Environment="PATH=/var/www/dimensio/venv/bin:/usr/local/bin:/usr/bin:/bin"
+WorkingDirectory=/root/workspace/dimensio
+Environment="PATH=/root/workspace/dimensio/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="FLASK_APP=api/server.py"
 Environment="FLASK_ENV=production"
-ExecStart=/var/www/dimensio/venv/bin/gunicorn \
+ExecStart=/root/workspace/dimensio/venv/bin/gunicorn \
     --bind 127.0.0.1:5000 \
     --workers 4 \
     --threads 2 \
