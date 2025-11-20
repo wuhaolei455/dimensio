@@ -259,8 +259,24 @@ build_and_start() {
 
     cd "$PROJECT_DIR/deploy/docker"
 
-    # 构建镜像
-    docker compose build --no-cache
+    # 构建镜像（禁用 provenance 避免网络问题）
+    print_info "使用优化参数构建镜像..."
+
+    # 设置环境变量禁用 provenance 和 sbom
+    export DOCKER_BUILDKIT=1
+    export BUILDKIT_PROGRESS=plain
+
+    # 使用 --provenance=false 参数避免连接 Docker Hub
+    if docker compose build --no-cache --progress=plain 2>&1 | grep -q "provenance"; then
+        print_warning "检测到 provenance 问题，使用备用构建方法..."
+        docker buildx create --use --name dimensio-builder --driver docker-container || true
+        docker buildx build --load --no-cache --provenance=false --sbom=false \
+            -f Dockerfile.backend -t deploy-backend:latest ../.. || \
+            docker compose build --no-cache
+    else
+        docker compose build --no-cache --progress=plain
+    fi
+
     print_success "镜像构建完成"
 
     print_info "启动容器..."
