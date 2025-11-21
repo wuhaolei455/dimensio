@@ -9,15 +9,18 @@ COPY front/package*.json ./
 # Configure npm registry mirror for faster downloads
 RUN npm config set registry https://registry.npmmirror.com
 
-# Install dependencies with increased memory and timeout
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm install --legacy-peer-deps --verbose
+# Clean npm cache and install dependencies
+RUN npm cache clean --force && \
+    npm install --no-optional --verbose
 
 # Copy frontend source
 COPY front/ ./
 
-# Build frontend with production mode
+# Build frontend (minimization is disabled in webpack.config.js to avoid terser issues)
 RUN npm run build
+
+# Verify build output
+RUN ls -lh dist/ && test -f dist/index.html
 
 # Production stage with Nginx
 FROM nginx:alpine

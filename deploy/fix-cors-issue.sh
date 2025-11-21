@@ -28,23 +28,30 @@ docker-compose down
 echo -e "${GREEN}✓ Containers stopped${NC}"
 echo ""
 
-echo "Step 2: Rebuilding services (this may take a few minutes)..."
-echo "  Note: Frontend build may take 5-10 minutes, please be patient..."
+echo "Step 2: Rebuilding services (this may take 5-10 minutes)..."
+echo "  Note: Code minification is disabled to avoid terser-webpack-plugin errors"
+echo "        Bundle will be larger but fully functional"
 echo ""
 
 echo "  - Building backend with CORS support..."
 docker-compose build backend --no-cache
-echo -e "${GREEN}✓ Backend built${NC}"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Backend built${NC}"
+else
+    echo -e "${RED}✗ Backend build failed${NC}"
+    exit 1
+fi
 echo ""
 
 echo "  - Building frontend (this takes longer)..."
-echo "    Installing dependencies and building production bundle..."
+echo "    Installing dependencies and building bundle (without minification)..."
 docker-compose build frontend --no-cache
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Frontend built successfully${NC}"
 else
     echo -e "${RED}✗ Frontend build failed${NC}"
     echo "Check the error messages above for details"
+    echo "Try running: ./fix-terser-error.sh for more detailed diagnostics"
     exit 1
 fi
 

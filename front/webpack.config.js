@@ -1,6 +1,5 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -36,20 +35,8 @@ module.exports = (env, argv) => {
       }),
     ],
     optimization: {
-      minimize: isProduction,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            compress: {
-              drop_console: isProduction,
-            },
-            format: {
-              comments: false,
-            },
-          },
-          extractComments: false,
-        }),
-      ],
+      // Disable minimization to avoid terser-webpack-plugin issues in Docker Alpine
+      minimize: false,
     },
     devServer: {
       static: {
@@ -69,8 +56,8 @@ module.exports = (env, argv) => {
     devtool: isProduction ? false : 'source-map',
     performance: {
       hints: false,
-      maxEntrypointSize: 512000,
-      maxAssetSize: 512000,
+      maxEntrypointSize: 1024000,  // Increased since we're not minifying
+      maxAssetSize: 1024000,
     },
   };
 };
