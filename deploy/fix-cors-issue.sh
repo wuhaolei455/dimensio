@@ -29,13 +29,24 @@ echo -e "${GREEN}✓ Containers stopped${NC}"
 echo ""
 
 echo "Step 2: Rebuilding services (this may take a few minutes)..."
+echo "  Note: Frontend build may take 5-10 minutes, please be patient..."
+echo ""
+
 echo "  - Building backend with CORS support..."
 docker-compose build backend --no-cache
 echo -e "${GREEN}✓ Backend built${NC}"
+echo ""
 
-echo "  - Building frontend..."
+echo "  - Building frontend (this takes longer)..."
+echo "    Installing dependencies and building production bundle..."
 docker-compose build frontend --no-cache
-echo -e "${GREEN}✓ Frontend built${NC}"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Frontend built successfully${NC}"
+else
+    echo -e "${RED}✗ Frontend build failed${NC}"
+    echo "Check the error messages above for details"
+    exit 1
+fi
 
 echo "  - Pulling Nginx image..."
 docker-compose pull nginx

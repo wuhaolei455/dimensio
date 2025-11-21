@@ -9,13 +9,14 @@ COPY front/package*.json ./
 # Configure npm registry mirror for faster downloads
 RUN npm config set registry https://registry.npmmirror.com
 
-# Install dependencies
-RUN npm install
+# Install dependencies with increased memory and timeout
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npm install --legacy-peer-deps --verbose
 
 # Copy frontend source
 COPY front/ ./
 
-# Build frontend
+# Build frontend with production mode
 RUN npm run build
 
 # Production stage with Nginx
