@@ -3,24 +3,27 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY front/package*.json ./
+# Copy all frontend source first
+COPY front/ ./
 
 # Configure npm registry mirror for faster downloads
 RUN npm config set registry https://registry.npmmirror.com
 
-# Clean npm cache and install dependencies
-RUN npm cache clean --force && \
-    npm install --no-optional --verbose
+# Install dependencies
+RUN npm install --legacy-peer-deps 2>&1 | tee /tmp/npm-install.log && \
+    echo "✓ npm install completed" && \
+    npm list --depth=0
 
-# Copy frontend source
-COPY front/ ./
-
-# Build frontend (minimization is disabled in webpack.config.js to avoid terser issues)
-RUN npm run build
+# Build frontend (using babel-loader, minimization disabled)
+RUN echo "Starting webpack build..." && \
+    npm run build 2>&1 | tee /tmp/webpack-build.log && \
+    echo "✓ webpack build completed"
 
 # Verify build output
-RUN ls -lh dist/ && test -f dist/index.html
+RUN echo "Verifying build output..." && \
+    ls -lh dist/ && \
+    test -f dist/index.html && \
+    echo "✓ Build verification passed"
 
 # Production stage with Nginx
 FROM nginx:alpine
