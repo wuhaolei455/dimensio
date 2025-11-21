@@ -253,13 +253,47 @@ clean_old_images() {
     print_success "镜像清理完成"
 }
 
+# 预拉取基础镜像
+pre_pull_base_images() {
+    print_info "预拉取基础镜像（使用配置的镜像加速器）..."
+
+    # 拉取后端基础镜像
+    print_info "拉取 python:3.9-slim..."
+    if docker pull python:3.9-slim; then
+        print_success "python:3.9-slim 拉取成功"
+    else
+        print_warning "python:3.9-slim 拉取失败，将在构建时重试"
+    fi
+
+    # 拉取前端基础镜像
+    print_info "拉取 node:18-alpine..."
+    if docker pull node:18-alpine; then
+        print_success "node:18-alpine 拉取成功"
+    else
+        print_warning "node:18-alpine 拉取失败，将在构建时重试"
+    fi
+
+    # 拉取 Nginx 镜像
+    print_info "拉取 nginx:alpine..."
+    if docker pull nginx:alpine; then
+        print_success "nginx:alpine 拉取成功"
+    else
+        print_warning "nginx:alpine 拉取失败，将在构建时重试"
+    fi
+
+    print_success "基础镜像预拉取完成"
+}
+
 # 构建并启动容器
 build_and_start() {
-    print_info "构建 Docker 镜像..."
-
     cd "$PROJECT_DIR/deploy/docker"
 
-    # 构建镜像
+    # 预拉取基础镜像，加快构建速度
+    pre_pull_base_images
+
+    print_info "构建 Docker 镜像..."
+
+    # 构建镜像（使用 --no-cache 确保完全重建）
     docker compose build --no-cache
     print_success "镜像构建完成"
 
