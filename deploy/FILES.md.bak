@@ -186,7 +186,7 @@ cd /root/dimensio/deploy
 cd /root/dimensio
 git pull origin main
 cd deploy/docker
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ## 🎯 核心特性

@@ -39,10 +39,10 @@ cd "$(dirname "$0")"
 
 if [ "$1" = "--no-cache" ]; then
     echo "Building with --no-cache option"
-    docker compose build --no-cache
+    docker-compose build --no-cache
 else
     echo "Building with cache (use --no-cache to rebuild from scratch)"
-    docker compose build
+    docker-compose build
 fi
 
 echo -e "${GREEN}✓ Build completed successfully${NC}"
@@ -50,20 +50,20 @@ echo ""
 
 # Step 3: Show images
 echo -e "${BLUE}[3/4] Docker images created:${NC}"
-docker compose images
+docker-compose images
 
 echo ""
 
 # Step 4: Instructions
 echo -e "${BLUE}[4/4] Next steps:${NC}"
 echo "To start the services, run:"
-echo "  cd deploy/docker && docker compose up -d"
+echo "  cd deploy/docker && docker-compose up -d"
 echo ""
 echo "To view logs:"
-echo "  docker compose logs -f"
+echo "  docker-compose logs -f"
 echo ""
 echo "To stop services:"
-echo "  docker compose down"
+echo "  docker-compose down"
 echo ""
 echo -e "${GREEN}======================================"
 echo "Build completed successfully!"

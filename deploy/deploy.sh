@@ -173,9 +173,9 @@ EOF
 install_docker_compose() {
     print_info "检查 Docker Compose 是否已安装..."
 
-    if command -v docker-compose &> /dev/null || docker compose version &> /dev/null; then
-        if docker compose version &> /dev/null; then
-            COMPOSE_VERSION=$(docker compose version)
+    if command -v docker-compose &> /dev/null || docker-compose version &> /dev/null; then
+        if docker-compose version &> /dev/null; then
+            COMPOSE_VERSION=$(docker-compose version)
         else
             COMPOSE_VERSION=$(docker-compose --version)
         fi
@@ -238,8 +238,8 @@ stop_old_containers() {
 
     cd "$PROJECT_DIR/deploy/docker"
 
-    if docker compose ps | grep -q "Up"; then
-        docker compose down
+    if docker-compose ps | grep -q "Up"; then
+        docker-compose down
         print_success "旧容器已停止"
     else
         print_info "没有运行中的容器"
@@ -294,11 +294,11 @@ build_and_start() {
     print_info "构建 Docker 镜像..."
 
     # 构建镜像（使用 --no-cache 确保完全重建）
-    docker compose build --no-cache
+    docker-compose build --no-cache
     print_success "镜像构建完成"
 
     print_info "启动容器..."
-    docker compose up -d
+    docker-compose up -d
 
     print_success "容器启动完成"
 }
@@ -312,7 +312,7 @@ check_containers() {
     cd "$PROJECT_DIR/deploy/docker"
 
     echo ""
-    docker compose ps
+    docker-compose ps
     echo ""
 
     # 检查每个服务
@@ -320,7 +320,7 @@ check_containers() {
     ALL_RUNNING=true
 
     for service in "${SERVICES[@]}"; do
-        if docker compose ps | grep "dimensio-$service" | grep -q "Up"; then
+        if docker-compose ps | grep "dimensio-$service" | grep -q "Up"; then
             print_success "$service 服务运行正常"
         else
             print_error "$service 服务未运行"
@@ -332,7 +332,7 @@ check_containers() {
         print_success "所有服务运行正常"
     else
         print_error "部分服务未正常运行，请检查日志"
-        print_info "查看日志命令: cd $PROJECT_DIR/deploy/docker && docker compose logs"
+        print_info "查看日志命令: cd $PROJECT_DIR/deploy/docker && docker-compose logs"
         return 1
     fi
 }
@@ -397,11 +397,11 @@ print_deployment_info() {
     echo -e "  健康检查: ${GREEN}http://$SERVER_IP/health${NC}"
     echo ""
     echo -e "${BLUE}常用命令:${NC}"
-    echo -e "  查看容器状态:   ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker compose ps${NC}"
-    echo -e "  查看日志:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker compose logs -f${NC}"
-    echo -e "  停止服务:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker compose down${NC}"
-    echo -e "  重启服务:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker compose restart${NC}"
-    echo -e "  重新构建:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker compose up -d --build${NC}"
+    echo -e "  查看容器状态:   ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker-compose ps${NC}"
+    echo -e "  查看日志:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker-compose logs -f${NC}"
+    echo -e "  停止服务:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker-compose down${NC}"
+    echo -e "  重启服务:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker-compose restart${NC}"
+    echo -e "  重新构建:       ${YELLOW}cd $PROJECT_DIR/deploy/docker && docker-compose up -d --build${NC}"
     echo ""
     echo -e "${BLUE}项目目录:${NC}"
     echo -e "  项目根目录:     ${GREEN}$PROJECT_DIR${NC}"

@@ -65,7 +65,7 @@ FROM nginx:alpine@sha256:新的digest值
 
 ```bash
 cd deploy/docker
-docker-compose build
+docker compose build
 ```
 
 ## 注意事项

@@ -51,19 +51,19 @@ sudo bash deploy.sh
 cd /root/dimensio/deploy/docker
 
 # 查看服务状态
-docker compose ps
+docker-compose ps
 
 # 查看日志
-docker compose logs -f
+docker-compose logs -f
 
 # 重启服务
-docker compose restart
+docker-compose restart
 
 # 停止服务
-docker compose down
+docker-compose down
 
 # 更新代码后重新部署
-docker compose up -d --build
+docker-compose up -d --build
 ```
 
 ## ⚡ 快速测试
@@ -81,8 +81,8 @@ docker ps
 
 ## 🐛 ��到问题？
 
-1. 查看日志: `docker compose logs -f`
-2. 检查容器: `docker compose ps`
+1. 查看日志: `docker-compose logs -f`
+2. 检查容器: `docker-compose ps`
 3. 阅读完整文档: `cat /root/dimensio/deploy/README.md`
 
 ## 📋 系统要求

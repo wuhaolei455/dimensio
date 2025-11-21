@@ -92,11 +92,11 @@ chmod 755 data result logs
 cd deploy/docker
 
 # 6. 构建并启动服务
-docker compose build
-docker compose up -d
+docker-compose build
+docker-compose up -d
 
 # 7. 检查服务状态
-docker compose ps
+docker-compose ps
 ```
 
 ## 📖 详细说明
@@ -146,61 +146,61 @@ dimensio/
 
 ```bash
 cd /root/dimensio/deploy/docker
-docker compose ps
+docker-compose ps
 ```
 
 ### 查看日志
 
 ```bash
 # 查看所有服务日志
-docker compose logs -f
+docker-compose logs -f
 
 # 查看特定服务日志
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f nginx
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f nginx
 ```
 
 ### 重启服务
 
 ```bash
 # 重启所有服务
-docker compose restart
+docker-compose restart
 
 # 重启特定服务
-docker compose restart backend
-docker compose restart frontend
-docker compose restart nginx
+docker-compose restart backend
+docker-compose restart frontend
+docker-compose restart nginx
 ```
 
 ### 停止服务
 
 ```bash
-docker compose down
+docker-compose down
 ```
 
 ### 启动服务
 
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 
 ### 重新构建并启动
 
 ```bash
 # 重新构建镜像并启动（代码更新后使用）
-docker compose up -d --build
+docker-compose up -d --build
 
 # 不使用缓存重新构建
-docker compose build --no-cache
-docker compose up -d
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
 ### 清理资源
 
 ```bash
 # 停止并删除容器、网络
-docker compose down
+docker-compose down
 
 # 清理未使用的镜像
 docker image prune -f
@@ -284,16 +284,16 @@ sudo systemctl enable docker
 ```bash
 # 查看详细日志
 cd /root/dimensio/deploy/docker
-docker compose logs backend
-docker compose logs frontend
-docker compose logs nginx
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs nginx
 
 # 检查配置文件
 cat docker-compose.yml
 
 # 重新构建容器
-docker compose down
-docker compose up -d --build
+docker-compose down
+docker-compose up -d --build
 ```
 
 ### 4. 前端无法访问后端
@@ -303,13 +303,13 @@ docker compose up -d --build
 **解决方案**:
 ```bash
 # 检查网络连通性
-docker compose exec frontend ping backend
+docker-compose exec frontend ping backend
 
 # 检查 Nginx 配置
-docker compose exec nginx nginx -t
+docker-compose exec nginx nginx -t
 
 # 重启 Nginx
-docker compose restart nginx
+docker-compose restart nginx
 ```
 
 ### 5. Python 依赖安装失败
@@ -323,8 +323,8 @@ docker compose restart nginx
 # RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 重新构建
-docker compose build --no-cache backend
-docker compose up -d
+docker-compose build --no-cache backend
+docker-compose up -d
 ```
 
 ### 6. 磁盘空间不足
@@ -371,13 +371,13 @@ git pull origin main
 
 # 3. 停止当前服务
 cd deploy/docker
-docker compose down
+docker-compose down
 
 # 4. 重新构建并启动
-docker compose up -d --build
+docker-compose up -d --build
 
 # 5. 验证服务
-docker compose ps
+docker-compose ps
 curl http://localhost/api/
 ```
 
@@ -388,10 +388,10 @@ curl http://localhost/api/
 vim deploy/nginx/dimensio.conf
 
 # 2. 重新加载 Nginx 配置
-docker compose restart nginx
+docker-compose restart nginx
 
 # 或者重新构建
-docker compose up -d --build nginx
+docker-compose up -d --build nginx
 ```
 
 ## 📊 监控与维护
@@ -452,8 +452,8 @@ vim deploy/.env
 
 如果遇到问题：
 
-1. 查看日志: `docker compose logs -f`
-2. 检查容器状态: `docker compose ps`
+1. 查看日志: `docker-compose logs -f`
+2. 检查容器状态: `docker-compose ps`
 3. 查看本文档的故障排除部分
 4. 检查 Docker 和系统日志: `journalctl -u docker`
 

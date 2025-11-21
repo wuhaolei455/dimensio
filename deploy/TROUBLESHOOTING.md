@@ -95,7 +95,7 @@ sudo systemctl disable apache2
 
 # 重新启动服务
 cd /root/dimensio/deploy/docker
-docker compose up -d
+docker-compose up -d
 ```
 
 ### 2. Docker 服务未启动
@@ -174,16 +174,16 @@ Status: Exited (1)
 ```bash
 # 查看容器日志
 cd /root/dimensio/deploy/docker
-docker compose logs backend
-docker compose logs frontend
-docker compose logs nginx
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs nginx
 
 # 重新构建容器
-docker compose down
-docker compose up -d --build --force-recreate
+docker-compose down
+docker-compose up -d --build --force-recreate
 
 # 查看详细错误
-docker compose up
+docker-compose up
 ```
 
 ### 6. 前端无法连接后端
@@ -194,17 +194,17 @@ docker compose up
 **解决方案：**
 ```bash
 # 检查网络连通性
-docker compose exec frontend ping backend
+docker-compose exec frontend ping backend
 
 # 检查 Nginx 配置
-docker compose exec nginx cat /etc/nginx/conf.d/default.conf
-docker compose exec nginx nginx -t
+docker-compose exec nginx cat /etc/nginx/conf.d/default.conf
+docker-compose exec nginx nginx -t
 
 # 重启 Nginx
-docker compose restart nginx
+docker-compose restart nginx
 
 # 查看 Nginx 日志
-docker compose logs nginx
+docker-compose logs nginx
 ```
 
 ### 7. Python 依赖安装失败
@@ -226,8 +226,8 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 然后重新构建：
 ```bash
 cd /root/dimensio/deploy/docker
-docker compose build --no-cache backend
-docker compose up -d
+docker-compose build --no-cache backend
+docker-compose up -d
 ```
 
 ### 8. 防火墙阻止访问
@@ -266,8 +266,8 @@ RUN npm config set registry https://registry.npmmirror.com
 然后重新构建：
 ```bash
 cd /root/dimensio/deploy/docker
-docker compose build --no-cache frontend
-docker compose up -d
+docker-compose build --no-cache frontend
+docker-compose up -d
 ```
 
 ### 10. 数据目录权限问题
@@ -295,7 +295,7 @@ systemctl status docker
 
 # Docker 版本
 docker --version
-docker compose version
+docker-compose version
 
 # Docker 资源使用
 docker stats
@@ -309,16 +309,16 @@ docker system df
 cd /root/dimensio/deploy/docker
 
 # 容器状态
-docker compose ps
+docker-compose ps
 
 # 所有容器（包括停止的）
-docker compose ps -a
+docker-compose ps -a
 
 # 容器日志
-docker compose logs -f
+docker-compose logs -f
 
 # 特定容器日志
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### 检查网络
@@ -372,15 +372,15 @@ cat /etc/os-release
 
 echo -e "\n===== Docker 信息 ====="
 docker --version
-docker compose version
+docker-compose version
 docker info
 
 echo -e "\n===== 容器状态 ====="
 cd /root/dimensio/deploy/docker
-docker compose ps -a
+docker-compose ps -a
 
 echo -e "\n===== 最近日志 ====="
-docker compose logs --tail=50
+docker-compose logs --tail=50
 
 echo -e "\n===== 磁盘使用 ====="
 df -h
@@ -407,7 +407,7 @@ cat diagnostic.log
 ```bash
 # 1. 停止所有容器
 cd /root/dimensio/deploy/docker
-docker compose down -v
+docker-compose down -v
 
 # 2. 清理所有 Docker 资源
 docker system prune -a --volumes -f

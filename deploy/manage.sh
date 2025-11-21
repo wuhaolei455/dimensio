@@ -50,7 +50,7 @@ show_help() {
 start_service() {
     print_info "启动服务..."
     cd "$DOCKER_DIR"
-    docker compose up -d
+    docker-compose up -d
     print_success "服务已启动"
     show_status
 }
@@ -59,7 +59,7 @@ start_service() {
 stop_service() {
     print_info "停止服务..."
     cd "$DOCKER_DIR"
-    docker compose down
+    docker-compose down
     print_success "服务已停止"
 }
 
@@ -67,7 +67,7 @@ stop_service() {
 restart_service() {
     print_info "重启服务..."
     cd "$DOCKER_DIR"
-    docker compose restart
+    docker-compose restart
     print_success "服务已重启"
     show_status
 }
@@ -76,21 +76,21 @@ restart_service() {
 show_status() {
     print_info "服务状态:"
     cd "$DOCKER_DIR"
-    docker compose ps
+    docker-compose ps
 }
 
 # 查看日志
 show_logs() {
     print_info "查看日志（最近100行）..."
     cd "$DOCKER_DIR"
-    docker compose logs --tail=100
+    docker-compose logs --tail=100
 }
 
 # 实时查看日志
 show_logs_follow() {
     print_info "实时查看日志（按 Ctrl+C 退出）..."
     cd "$DOCKER_DIR"
-    docker compose logs -f
+    docker-compose logs -f
 }
 
 # 更新并重新部署
@@ -106,8 +106,8 @@ update_service() {
 
     print_info "重新构建并启动..."
     cd "$DOCKER_DIR"
-    docker compose down
-    docker compose up -d --build
+    docker-compose down
+    docker-compose up -d --build
 
     print_success "更新完成"
     show_status
@@ -117,8 +117,8 @@ update_service() {
 rebuild_service() {
     print_info "重新构建镜像..."
     cd "$DOCKER_DIR"
-    docker compose build --no-cache
-    docker compose up -d
+    docker-compose build --no-cache
+    docker-compose up -d
     print_success "重新构建完成"
     show_status
 }
@@ -187,7 +187,7 @@ test_service() {
 enter_shell() {
     print_info "进入后端容器..."
     cd "$DOCKER_DIR"
-    docker compose exec backend bash || docker compose exec backend sh
+    docker-compose exec backend bash || docker-compose exec backend sh
 }
 
 # 主函数
