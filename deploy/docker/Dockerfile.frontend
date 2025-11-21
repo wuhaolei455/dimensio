@@ -3,27 +3,40 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy all frontend source first
+# Copy all frontend source
 COPY front/ ./
 
-# Configure npm registry mirror for faster downloads
+# Show what we copied
+RUN echo "=== Files copied ===" && ls -la
+
+# Configure npm registry mirror
 RUN npm config set registry https://registry.npmmirror.com
 
-# Install dependencies
-RUN npm install --legacy-peer-deps 2>&1 | tee /tmp/npm-install.log && \
-    echo "✓ npm install completed" && \
-    npm list --depth=0
+# Install dependencies (separate step to catch errors)
+RUN echo "=== Installing dependencies ===" && \
+    npm install --legacy-peer-deps
 
-# Build frontend (using babel-loader, minimization disabled)
-RUN echo "Starting webpack build..." && \
-    npm run build 2>&1 | tee /tmp/webpack-build.log && \
-    echo "✓ webpack build completed"
+# Verify node_modules exists
+RUN echo "=== Checking node_modules ===" && \
+    ls -la node_modules/ | head -20 && \
+    test -d node_modules/webpack && echo "✓ webpack found" && \
+    test -d node_modules/babel-loader && echo "✓ babel-loader found"
 
-# Verify build output
-RUN echo "Verifying build output..." && \
+# Show package.json scripts
+RUN echo "=== Package.json scripts ===" && \
+    cat package.json | grep -A 5 '"scripts"'
+
+# Build frontend (separate step to see full output)
+RUN echo "=== Starting webpack build ===" && \
+    npm run build
+
+# Verify build succeeded
+RUN echo "=== Build verification ===" && \
+    ls -lah && \
+    echo "--- Checking dist directory ---" && \
+    test -d dist && echo "✓ dist exists" || (echo "✗ dist missing!" && exit 1) && \
     ls -lh dist/ && \
-    test -f dist/index.html && \
-    echo "✓ Build verification passed"
+    test -f dist/index.html && echo "✓ index.html found" || (echo "✗ index.html missing!" && exit 1)
 
 # Production stage with Nginx
 FROM nginx:alpine
