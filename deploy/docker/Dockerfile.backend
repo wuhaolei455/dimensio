@@ -4,6 +4,12 @@ FROM python:3.9-slim
 # Set working directory
 WORKDIR /app
 
+# Configure Debian mirror for faster package downloads (China)
+RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources || \
+    (echo "deb https://mirrors.ustc.edu.cn/debian/ trixie main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+     echo "deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+     echo "deb https://mirrors.ustc.edu.cn/debian-security trixie-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list)
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -15,8 +21,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/
 COPY api/requirements.txt /app/api-requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
+# Install Python dependencies with pip mirror
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+    pip config set install.trusted-host mirrors.aliyun.com && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r api-requirements.txt
 
 # Copy application code

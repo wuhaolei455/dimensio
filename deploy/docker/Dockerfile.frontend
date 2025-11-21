@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY front/package*.json ./
 
+# Configure npm registry mirror for faster downloads
+RUN npm config set registry https://registry.npmmirror.com
+
 # Install dependencies
 RUN npm install
 
