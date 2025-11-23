@@ -11,6 +11,8 @@ from ..steps.dimension import (
     CorrelationDimensionStep,
     ExpertDimensionStep,
     AdaptiveDimensionStep,
+    SHAPImportanceCalculator,
+    CorrelationImportanceCalculator,
 )
 from ..steps.range import (
     BoundaryRangeStep,
@@ -24,9 +26,111 @@ from ..steps.projection import (
     HesBOProjectionStep,
     KPCAProjectionStep,
 )
-from ..core import CompressionStep
+from ..core import (
+    CompressionStep,
+    PeriodicUpdateStrategy,
+    StagnationUpdateStrategy,
+    ImprovementUpdateStrategy,
+    HybridUpdateStrategy,
+    CompositeUpdateStrategy,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _create_importance_calculator_from_string(
+    importance_str: Optional[str] = None,
+    **kwargs
+) -> Optional[Any]:
+    if importance_str is None:
+        return None
+    
+    importance_str = importance_str.lower()
+    
+    if importance_str in ('shap', 'shap_importance'):
+        return SHAPImportanceCalculator()
+    elif importance_str in ('correlation', 'corr'):
+        method = kwargs.get('correlation_method', 'spearman')
+        return CorrelationImportanceCalculator(method=method)
+    elif importance_str == 'correlation_spearman':
+        return CorrelationImportanceCalculator(method='spearman')
+    elif importance_str == 'correlation_pearson':
+        return CorrelationImportanceCalculator(method='pearson')
+    else:
+        logger.warning(
+            f"Unknown importance calculator string: {importance_str}. "
+            f"Using default SHAPImportanceCalculator."
+        )
+        return SHAPImportanceCalculator()
+
+
+def _create_update_strategy_from_string(
+    update_str: Optional[str] = None,
+    **kwargs
+) -> Optional[Any]:
+    """
+    Create an update strategy instance from a string identifier.
+    
+    Args:
+        update_str: String identifier for update strategy.
+                   Options: 'periodic', 'stagnation', 'improvement', 'hybrid', 'composite', 'none'
+        **kwargs: Additional parameters for the strategy:
+                  - For 'periodic': 'period' (default: 5)
+                  - For 'stagnation': 'stagnation_threshold' (default: 5)
+                  - For 'improvement': 'improvement_threshold' (default: 3)
+                  - For 'hybrid': 'period', 'stagnation_threshold', 'improvement_threshold'
+                  - For 'composite': expects list of strategy strings in 'composite_strategies'
+    
+    Returns:
+        UpdateStrategy instance or None
+    """
+    if update_str is None or update_str.lower() == 'none':
+        return None
+    
+    update_str = update_str.lower()
+    
+    if update_str == 'periodic':
+        period = kwargs.get('period', 5)
+        return PeriodicUpdateStrategy(period=period)
+    elif update_str == 'stagnation':
+        threshold = kwargs.get('stagnation_threshold', 5)
+        return StagnationUpdateStrategy(threshold=threshold)
+    elif update_str == 'improvement':
+        threshold = kwargs.get('improvement_threshold', 3)
+        return ImprovementUpdateStrategy(threshold=threshold)
+    elif update_str == 'hybrid':
+        period = kwargs.get('period', 10)
+        stagnation_threshold = kwargs.get('stagnation_threshold', None)
+        improvement_threshold = kwargs.get('improvement_threshold', None)
+        return HybridUpdateStrategy(
+            period=period,
+            stagnation_threshold=stagnation_threshold,
+            improvement_threshold=improvement_threshold
+        )
+    elif update_str == 'composite':
+        composite_strategies = kwargs.get('composite_strategies', [])
+        if not composite_strategies:
+            logger.warning("No strategies provided for composite, using default periodic")
+            return PeriodicUpdateStrategy(period=5)
+        
+        strategies = []
+        for strategy_str in composite_strategies:
+            strategy = _create_update_strategy_from_string(strategy_str, **kwargs)
+            if strategy is not None:
+                strategies.append(strategy)
+        
+        if not strategies:
+            logger.warning("No valid strategies for composite, using default periodic")
+            return PeriodicUpdateStrategy(period=5)
+        
+        return CompositeUpdateStrategy(*strategies)
+    else:
+        logger.warning(
+            f"Unknown update strategy string: {update_str}. "
+            f"Using default PeriodicUpdateStrategy(period=5)."
+        )
+        return PeriodicUpdateStrategy(period=5)
+
 
 _STEP_REGISTRY = {
     'd_shap': {
@@ -56,6 +160,8 @@ _STEP_REGISTRY = {
     'd_adaptive': {
         'class': AdaptiveDimensionStep,
         'default_params': {
+            'importance_calculator': 'shap',  # Options: 'shap', 'correlation', 'correlation_spearman', 'correlation_pearson'
+            'update_strategy': 'periodic',  # Options: 'periodic', 'stagnation', 'improvement', 'hybrid', 'composite', 'none'
             'initial_topk': 30,
             'reduction_ratio': 0.2,
             'min_dimensions': 5,
@@ -224,6 +330,48 @@ def create_step_from_string(
         >>> # Create a KDE range step with custom parameters
         >>> step = create_step_from_string('r_kde', source_top_ratio=0.5, kde_coverage=0.7)
         
+        >>> # Create an adaptive dimension step with string-based importance and update strategy
+        >>> step = create_step_from_string('d_adaptive', 
+        ...                               importance_calculator='shap',
+        ...                               update_strategy='periodic',
+        ...                               period=10)
+        
+        >>> # Create an adaptive dimension step with correlation importance and stagnation strategy
+        >>> step = create_step_from_string('d_adaptive',
+        ...                               importance_calculator='correlation_spearman',
+        ...                               update_strategy='stagnation',
+        ...                               stagnation_threshold=5)
+        
+        >>> # Create an adaptive dimension step with hybrid update strategy
+        >>> step = create_step_from_string('d_adaptive',
+        ...                               importance_calculator='shap',
+        ...                               update_strategy='hybrid',
+        ...                               period=10,
+        ...                               stagnation_threshold=5,
+        ...                               improvement_threshold=3)
+        
+        >>> # Create a SHAP dimension step with excluded parameters
+        >>> step = create_step_from_string('d_shap', 
+        ...                               topk=10,
+        ...                               exclude_params=['param1', 'param2'])
+        
+        >>> # Create a correlation dimension step with excluded parameters
+        >>> step = create_step_from_string('d_corr',
+        ...                               method='spearman',
+        ...                               topk=15,
+        ...                               exclude_params=['learning_rate', 'batch_size'])
+        
+        >>> # Create an expert dimension step with excluded parameters
+        >>> step = create_step_from_string('d_expert',
+        ...                               expert_params=['param1', 'param2', 'param3'],
+        ...                               exclude_params=['param2'])  # Exclude param2 from expert selection
+        
+        >>> # Create an adaptive dimension step with excluded parameters
+        >>> step = create_step_from_string('d_adaptive',
+        ...                               importance_calculator='shap',
+        ...                               update_strategy='periodic',
+        ...                               exclude_params=['param1', 'param2'])
+        
         >>> # Return None for 'none' steps
         >>> step = create_step_from_string('d_none')  # Returns None
     """
@@ -244,6 +392,30 @@ def create_step_from_string(
     
     default_params = registry_entry['default_params'].copy()
     default_params.update(kwargs)
+    
+    # Special handling for AdaptiveDimensionStep: convert string parameters to instances
+    if step_str == 'd_adaptive' and step_class == AdaptiveDimensionStep:
+        if 'importance_calculator' in default_params:
+            importance_calc = default_params.pop('importance_calculator')
+            if isinstance(importance_calc, str):
+                importance_calculator = _create_importance_calculator_from_string(
+                    importance_calc,
+                    **default_params
+                )
+                default_params['importance_calculator'] = importance_calculator
+            else:
+                default_params['importance_calculator'] = importance_calc
+        
+        if 'update_strategy' in default_params:
+            update_strategy = default_params.pop('update_strategy')
+            if isinstance(update_strategy, str):
+                update_strategy = _create_update_strategy_from_string(
+                    update_strategy,
+                    **default_params
+                )
+                default_params['update_strategy'] = update_strategy
+            else:
+                default_params['update_strategy'] = update_strategy
     
     try:
         step = step_class(**default_params)

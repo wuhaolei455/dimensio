@@ -51,6 +51,11 @@ from .api import (
     create_steps_from_strings,
     get_available_step_strings,
     validate_step_string,
+    create_filling_from_string,
+    create_filling_from_config,
+    get_available_filling_strings,
+    validate_filling_string,
+    get_filling_info,
     compress_from_config,
 )
 
@@ -240,6 +245,11 @@ __all__ = [
     'create_steps_from_strings',
     'get_available_step_strings',
     'validate_step_string',
+    'create_filling_from_string',
+    'create_filling_from_config',
+    'get_available_filling_strings',
+    'validate_filling_string',
+    'get_filling_info',
 
     'compress_from_config',
 ]

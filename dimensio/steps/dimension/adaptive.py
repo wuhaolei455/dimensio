@@ -19,8 +19,9 @@ class AdaptiveDimensionStep(DimensionSelectionStep):
                  reduction_ratio: float = 0.2,
                  min_dimensions: int = 5,
                  max_dimensions: Optional[int] = None,
+                 exclude_params: Optional[List[str]] = None,
                  **kwargs):
-        super().__init__(strategy='adaptive', **kwargs)
+        super().__init__(strategy='adaptive', exclude_params=exclude_params, **kwargs)
         
         self.importance_calculator = importance_calculator or SHAPImportanceCalculator()
         self.update_strategy = update_strategy or PeriodicUpdateStrategy(period=5)
@@ -67,11 +68,13 @@ class AdaptiveDimensionStep(DimensionSelectionStep):
         selected_param_names = [param_names[i] for i in selected_numeric_indices]
         importances_selected = importances[selected_numeric_indices]
         
-        logger.debug(f"{self.importance_calculator.get_name()} selected parameters: {selected_param_names}")
-        logger.debug(f"{self.importance_calculator.get_name()} importances: {importances_selected}")
-        
         all_param_names = input_space.get_hyperparameter_names()
         selected_indices = [all_param_names.index(name) for name in selected_param_names]
+        selected_indices = self._apply_exclude_params(selected_indices, input_space, 
+                                                     f"{self.importance_calculator.get_name()} adaptive")
+        selected_param_names = [all_param_names[i] for i in selected_indices]
+        logger.debug(f"{self.importance_calculator.get_name()} selected parameters: {selected_param_names}")
+        logger.debug(f"{self.importance_calculator.get_name()} importances: {importances_selected}")
         
         compressed_space = self._create_compressed_space(input_space, selected_indices)
         self.selected_indices = selected_indices

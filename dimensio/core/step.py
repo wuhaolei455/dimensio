@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 from .progress import OptimizerProgress
 if TYPE_CHECKING:
     from ..sampling import SamplingStrategy
+    from ..filling import FillingStrategy
 
 
 class CompressionStep(ABC):    
@@ -20,7 +21,7 @@ class CompressionStep(ABC):
         self.kwargs = kwargs
         self.input_space: Optional[ConfigurationSpace] = None
         self.output_space: Optional[ConfigurationSpace] = None
-        self.filling_strategy = None  # Will be set by pipeline/compressor
+        self.filling_strategy: Optional['FillingStrategy'] = None  # Will be set by pipeline/compressor
     
     @abstractmethod
     def compress(self, input_space: ConfigurationSpace, 

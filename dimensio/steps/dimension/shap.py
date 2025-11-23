@@ -15,11 +15,12 @@ class SHAPDimensionStep(DimensionSelectionStep):
     def __init__(self, 
                  strategy: str = 'shap', 
                  topk: int = 20,
+                 exclude_params: Optional[List[str]] = None,
                  **kwargs):
-        super().__init__(strategy=strategy, **kwargs)
+        super().__init__(strategy=strategy, exclude_params=exclude_params, **kwargs)
         self.topk = 0 if strategy == 'none' else topk
         self._calculator = SHAPImportanceCalculator()
-        logger.debug(f"SHAPDimensionStep initialized: topk={topk}")
+        logger.debug(f"SHAPDimensionStep initialized: topk={topk}, exclude_params={self.exclude_params}")
     
     def get_step_info(self) -> dict:
         info = super().get_step_info()
@@ -62,8 +63,8 @@ class SHAPDimensionStep(DimensionSelectionStep):
         
         all_param_names = input_space.get_hyperparameter_names()
         selected_indices = [all_param_names.index(name) for name in selected_param_names]
+        selected_indices = self._apply_exclude_params(selected_indices, input_space, "SHAP")
         
-        logger.debug(f"SHAP dimension selection: {selected_param_names}")
         logger.debug(f"SHAP importances: {importances_selected}")
         
         return selected_indices

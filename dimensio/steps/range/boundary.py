@@ -86,8 +86,13 @@ class BoundaryRangeStep(RangeCompressionStep):
         
         X_combined = np.vstack(all_x)
         
+        fixed_params = self._get_fixed_params()
+        
         compressed_ranges = {}
         for i, param_name in enumerate(numeric_param_names):
+            if param_name in fixed_params:
+                logger.debug(f"Skipping range compression for fixed parameter '{param_name}'")
+                continue
             values_norm = X_combined[:, i]
             
             mean = np.mean(values_norm)

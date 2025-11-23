@@ -86,7 +86,13 @@ class SHAPBoundaryRangeStep(BoundaryRangeStep):
         
         compressed_ranges = {}
         
+        fixed_params = self._get_fixed_params()
+        
         for i, param_name in enumerate(numeric_param_names):
+            if param_name in fixed_params:
+                logger.debug(f"Skipping range compression for fixed parameter '{param_name}'")
+                continue
+            
             param_shap = shap_vals_array[:, i]  # Original SHAP values (can be negative)
             param_values = X_combined[:, i]
 
