@@ -27,7 +27,7 @@ CORS(app, resources={
 })
 
 # Configuration
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 ALLOWED_EXTENSIONS = {'json'}
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -533,6 +533,14 @@ def upload_files():
 
 
 # Error Handlers
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({
+        'success': False,
+        'error': 'File too large. Maximum file size is 100MB.'
+    }), 413
+
 
 @app.errorhandler(404)
 def not_found(error):
