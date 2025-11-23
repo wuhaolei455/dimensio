@@ -13,8 +13,9 @@ class ExpertDimensionStep(DimensionSelectionStep):
     def __init__(self, 
                  strategy: str = 'expert',
                  expert_params: Optional[List[str]] = None,
+                 exclude_params: Optional[List[str]] = None,
                  **kwargs):
-        super().__init__(strategy=strategy, **kwargs)
+        super().__init__(strategy=strategy, exclude_params=exclude_params, **kwargs)
         self.expert_params = expert_params
     
     def get_step_info(self) -> dict:
@@ -47,6 +48,9 @@ class ExpertDimensionStep(DimensionSelectionStep):
         if not selected_indices:
             logger.warning("No valid expert parameters found, keeping all parameters")
             return list(range(len(input_space.get_hyperparameters())))
+        
+        selected_indices = self._apply_exclude_params(selected_indices, input_space, "Expert")
+        valid_params = [input_space.get_hyperparameter_names()[i] for i in selected_indices]
         
         logger.debug(f"Expert dimension selection: {len(selected_indices)} parameters selected")
         logger.debug(f"Selected parameters: {valid_params}")

@@ -10,9 +10,10 @@ from ...core.step import CompressionStep
 
 
 class DimensionSelectionStep(CompressionStep):    
-    def __init__(self, strategy: str = 'shap', **kwargs):
+    def __init__(self, strategy: str = 'shap', exclude_params: Optional[List[str]] = None, **kwargs):
         super().__init__('dimension_selection', **kwargs)
         self.strategy = strategy
+        self.exclude_params = exclude_params or []
         self.selected_indices: Optional[List[int]] = None
         self.selected_param_names: Optional[List[str]] = None
     
@@ -67,6 +68,33 @@ class DimensionSelectionStep(CompressionStep):
         
         return compressed_space
     
+    def _apply_exclude_params(self, 
+                              selected_indices: List[int],
+                              input_space: ConfigurationSpace,
+                              step_name: str = "dimension selection") -> List[int]:
+        if not self.exclude_params:
+            return selected_indices
+        
+        all_param_names = input_space.get_hyperparameter_names()
+        result_indices = selected_indices.copy()
+        excluded_count = 0
+        
+        for exclude_name in self.exclude_params:
+            if exclude_name in all_param_names:
+                exclude_idx = all_param_names.index(exclude_name)
+                if exclude_idx in result_indices:
+                    result_indices.remove(exclude_idx)
+                    excluded_count += 1
+                    logger.debug(f"Excluded parameter '{exclude_name}' from {step_name}")
+                else:
+                    logger.debug(f"Parameter '{exclude_name}' was not in selected parameters, skipping exclusion")
+            else:
+                logger.warning(f"Exclude parameter '{exclude_name}' not found in configuration space")
+        
+        if excluded_count > 0:
+            logger.info(f"{step_name}: Excluded {excluded_count} parameter(s) from selection")
+        return sorted(result_indices)
+    
     def project_point(self, point) -> dict:
         # project a point from input_space to output_space.
         # filter to selected parameters and fill missing ones.
@@ -107,5 +135,8 @@ class DimensionSelectionStep(CompressionStep):
             info['selected_indices'] = self.selected_indices
         if hasattr(self, '_calculator') and self._calculator:
             info['calculator'] = type(self._calculator).__name__
-        info['compression_ratio'] = len(self.selected_indices) / len(self.input_space.get_hyperparameters())
+        if self.exclude_params:
+            info['exclude_params'] = self.exclude_params
+        if self.input_space:
+            info['compression_ratio'] = len(self.selected_indices) / len(self.input_space.get_hyperparameters())
         return info

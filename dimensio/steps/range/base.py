@@ -83,6 +83,11 @@ class RangeCompressionStep(CompressionStep):
         
         return details
     
+    def _get_fixed_params(self) -> set:
+        if self.filling_strategy is not None:
+            return set(self.filling_strategy.fixed_values.keys())
+        return set()
+    
     def _compute_compressed_space(self, 
                                   input_space: ConfigurationSpace,
                                   space_history: Optional[List[History]] = None,
