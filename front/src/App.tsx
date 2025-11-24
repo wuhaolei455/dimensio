@@ -109,9 +109,7 @@ const App: React.FC = () => {
     ? event.performance_metrics!.multi_task_importances
     : null;
 
-  const taskNames = hasMultiTaskData && event.performance_metrics!.task_names
-    ? event.performance_metrics!.task_names
-    : null;
+  const taskNames = event.performance_metrics?.task_names ?? null;
 
   // Use real source similarities if available, otherwise use mock data for demo
   const sourceSimilarities = hasTransferLearningData
@@ -189,7 +187,7 @@ const App: React.FC = () => {
         {hasTransferLearningData && sourceSimilarities && (
           <section className="chart-section">
             <h2 className="section-title">Source Task Similarities</h2>
-            <SourceSimilarities similarities={sourceSimilarities} />
+            <SourceSimilarities similarities={sourceSimilarities} taskNames={taskNames || undefined} />
           </section>
         )}
       </main>

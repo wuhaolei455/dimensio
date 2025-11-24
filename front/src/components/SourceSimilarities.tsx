@@ -1,22 +1,44 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 
 interface SourceSimilaritiesProps {
-  similarities: Record<number, number>; // task_index -> similarity
+  similarities: Record<string, number>; // task_id -> similarity
   taskNames?: string[];
 }
 
 const SourceSimilarities: React.FC<SourceSimilaritiesProps> = ({ similarities, taskNames }) => {
+  const similarityData = useMemo(() => {
+    const entries = Object.entries(similarities || {});
+
+    return entries
+      .map(([key, rawValue], index) => {
+        const numericValue = Number(rawValue);
+        if (!Number.isFinite(numericValue)) {
+          return null;
+        }
+
+        const numericIndex = Number(key);
+        const hasNumericIndex = !Number.isNaN(numericIndex);
+        const labelFromTasks =
+          hasNumericIndex && taskNames && taskNames[numericIndex] ? taskNames[numericIndex] : undefined;
+
+        return {
+          key,
+          value: numericValue,
+          label: labelFromTasks || key,
+          sortKey: hasNumericIndex ? numericIndex : entries.length + index,
+        };
+      })
+      .filter((item): item is { key: string; value: number; label: string; sortKey: number } => item !== null)
+      .sort((a, b) => a.sortKey - b.sortKey);
+  }, [similarities, taskNames]);
+
+  const labels = similarityData.map(item => item.label);
+  const simValues = similarityData.map(item => item.value);
+  const maxValue = simValues.length ? Math.max(...simValues) : 1;
+  const yAxisMax = maxValue === 0 ? 1 : maxValue * 1.1;
+
   const getOption = () => {
-    const taskIndices = Object.keys(similarities)
-      .map(Number)
-      .sort((a, b) => a - b);
-    const simValues = taskIndices.map(idx => similarities[idx]);
-
-    const labels = taskNames
-      ? taskIndices.map(idx => taskNames[idx])
-      : taskIndices.map(idx => `Source Task ${idx}`);
-
     return {
       title: {
         text: 'Source Task Similarity to Target Task',
@@ -55,12 +77,12 @@ const SourceSimilarities: React.FC<SourceSimilaritiesProps> = ({ similarities, t
         type: 'value',
         name: 'Similarity Score',
         nameTextStyle: { fontWeight: 'bold', fontSize: 12 },
-        max: Math.max(...simValues) * 1.1,
+        max: yAxisMax,
       },
       series: [
         {
           type: 'bar',
-          data: simValues.map((val, idx) => ({
+          data: simValues.map(val => ({
             value: val,
             itemStyle: {
               color:
@@ -74,7 +96,7 @@ const SourceSimilarities: React.FC<SourceSimilaritiesProps> = ({ similarities, t
           label: {
             show: true,
             position: 'top',
-            formatter: (params: any) => params.value.toFixed(3),
+            formatter: (params: any) => Number(params.value).toFixed(3),
             fontWeight: 'bold',
             fontSize: 11,
           },
