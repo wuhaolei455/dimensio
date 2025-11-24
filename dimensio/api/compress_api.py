@@ -36,6 +36,95 @@ from .filling_factory import (
 logger = logging.getLogger(__name__)
 
 
+def _coerce_fixed_value_mapping(
+    fixed_values: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]
+) -> Dict[str, Any]:
+    """
+    Convert various fixed value payload formats into a simple dictionary.
+    Supported formats:
+        {"param": 1.0}
+        [{"name": "param", "value": 1.0}]
+    """
+    if not fixed_values:
+        return {}
+    
+    if isinstance(fixed_values, dict):
+        return fixed_values
+    
+    coerced: Dict[str, Any] = {}
+    if isinstance(fixed_values, list):
+        for entry in fixed_values:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get('name')
+            if not name:
+                continue
+            coerced[name] = entry.get('value')
+    return coerced
+
+
+def _cast_value_for_hyperparameter(value: Any, hp) -> Any:
+    """
+    Cast and clamp a fixed value so it matches the target hyperparameter's type.
+    """
+    if value is None:
+        raise ValueError("Fixed value cannot be None")
+    
+    # Numeric hyperparameters (uniform float/int)
+    if hasattr(hp, 'lower') and hasattr(hp, 'upper'):
+        if isinstance(hp, UniformIntegerHyperparameter):
+            cast_value = int(round(float(value)))
+        else:
+            cast_value = float(value)
+        if cast_value < hp.lower:
+            logger.debug(f"Clamping fixed value for '{hp.name}' to lower bound {hp.lower}")
+            cast_value = hp.lower
+        if cast_value > hp.upper:
+            logger.debug(f"Clamping fixed value for '{hp.name}' to upper bound {hp.upper}")
+            cast_value = hp.upper
+        return cast_value
+    
+    # Categorical hyperparameters
+    if hasattr(hp, 'choices'):
+        if value in hp.choices:
+            return value
+        for choice in hp.choices:
+            if str(choice) == str(value):
+                return choice
+        raise ValueError(f"Value '{value}' not in categorical choices {hp.choices}")
+    
+    return value
+
+
+def normalize_fixed_values(
+    fixed_values: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]],
+    config_space: ConfigurationSpace
+) -> Dict[str, Any]:
+    """
+    Normalize user-provided fixed parameter values with respect to the configuration space.
+    """
+    fixed_mapping = _coerce_fixed_value_mapping(fixed_values)
+    if not fixed_mapping:
+        return {}
+    
+    normalized: Dict[str, Any] = {}
+    available_params = set(config_space.get_hyperparameter_names())
+    
+    for param_name, raw_value in fixed_mapping.items():
+        if param_name not in available_params:
+            logger.warning(f"Fixed parameter '{param_name}' not found in configuration space, skipping")
+            continue
+        try:
+            hp = config_space.get_hyperparameter(param_name)
+            normalized[param_name] = _cast_value_for_hyperparameter(raw_value, hp)
+        except Exception as exc:
+            logger.warning(
+                f"Failed to normalize fixed value for '{param_name}': {exc}. Skipping this fixed value."
+            )
+    
+    return normalized
+
+
 def create_config_space_from_dict(config_dict: Dict[str, Any]) -> ConfigurationSpace:
     """
     Create a ConfigurationSpace from a dictionary definition.
@@ -270,6 +359,16 @@ def compress_from_config(
     filling_strategy = None
     filling_config = step_config.get('filling_config')
     if filling_config:
+        filling_config = filling_config.copy()
+        normalized_fixed = normalize_fixed_values(
+            filling_config.get('fixed_values'),
+            config_space
+        )
+        if normalized_fixed:
+            filling_config['fixed_values'] = normalized_fixed
+        else:
+            filling_config.pop('fixed_values', None)
+        
         filling_strategy = create_filling_from_config(filling_config)
         logger.info(f"Created filling strategy: {type(filling_strategy).__name__}")
         if filling_strategy.fixed_values:

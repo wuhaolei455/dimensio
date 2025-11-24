@@ -138,6 +138,7 @@ _STEP_REGISTRY = {
         'default_params': {
             'strategy': 'shap',
             'topk': 20,
+            'exclude_params': [],
         },
         'description': 'SHAP-based dimension selection',
     },
@@ -146,6 +147,7 @@ _STEP_REGISTRY = {
         'default_params': {
             'method': 'spearman',
             'topk': 20,
+            'exclude_params': [],
         },
         'description': 'Correlation-based dimension selection',
     },
@@ -154,6 +156,7 @@ _STEP_REGISTRY = {
         'default_params': {
             'strategy': 'expert',
             'expert_params': [],
+            'exclude_params': [],
         },
         'description': 'Expert knowledge-based dimension selection',
     },
@@ -166,6 +169,12 @@ _STEP_REGISTRY = {
             'reduction_ratio': 0.2,
             'min_dimensions': 5,
             'max_dimensions': None,
+            'exclude_params': [],
+            'correlation_method': 'spearman',
+            'period': 5,
+            'stagnation_threshold': 5,
+            'improvement_threshold': 3,
+            'composite_strategies': [],
         },
         'description': 'Adaptive dimension selection with dynamic topk adjustment',
     },
@@ -395,12 +404,22 @@ def create_step_from_string(
     
     # Special handling for AdaptiveDimensionStep: convert string parameters to instances
     if step_str == 'd_adaptive' and step_class == AdaptiveDimensionStep:
+        correlation_method = default_params.pop('correlation_method', None)
+        period = default_params.pop('period', None)
+        stagnation_threshold = default_params.pop('stagnation_threshold', None)
+        improvement_threshold = default_params.pop('improvement_threshold', None)
+        composite_strategies = default_params.pop('composite_strategies', None)
+        
         if 'importance_calculator' in default_params:
             importance_calc = default_params.pop('importance_calculator')
             if isinstance(importance_calc, str):
+                importance_kwargs = {}
+                if correlation_method:
+                    importance_kwargs['correlation_method'] = correlation_method
+                
                 importance_calculator = _create_importance_calculator_from_string(
                     importance_calc,
-                    **default_params
+                    **importance_kwargs
                 )
                 default_params['importance_calculator'] = importance_calculator
             else:
@@ -409,9 +428,19 @@ def create_step_from_string(
         if 'update_strategy' in default_params:
             update_strategy = default_params.pop('update_strategy')
             if isinstance(update_strategy, str):
+                strategy_kwargs = {}
+                if period is not None:
+                    strategy_kwargs['period'] = period
+                if stagnation_threshold is not None:
+                    strategy_kwargs['stagnation_threshold'] = stagnation_threshold
+                if improvement_threshold is not None:
+                    strategy_kwargs['improvement_threshold'] = improvement_threshold
+                if composite_strategies:
+                    strategy_kwargs['composite_strategies'] = composite_strategies
+                
                 update_strategy = _create_update_strategy_from_string(
                     update_strategy,
-                    **default_params
+                    **strategy_kwargs
                 )
                 default_params['update_strategy'] = update_strategy
             else:

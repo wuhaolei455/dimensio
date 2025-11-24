@@ -60,20 +60,53 @@ const MultiStepUpload: React.FC<MultiStepUploadProps> = ({ onUploadSuccess }) =>
         const converted = { ...params };
 
         // Convert expert_params from comma-separated string to array
-        if ('expert_params' in converted && typeof converted.expert_params === 'string') {
-          converted.expert_params = converted.expert_params
-            .split(',')
-            .map((s: string) => s.trim())
-            .filter((s: string) => s.length > 0);
+        if ('expert_params' in converted) {
+          if (typeof converted.expert_params === 'string') {
+            converted.expert_params = converted.expert_params
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0);
+          } else if (!Array.isArray(converted.expert_params)) {
+            converted.expert_params = [];
+          }
         }
 
-        // Convert expert_ranges from JSON string to object
-        if ('expert_ranges' in converted && typeof converted.expert_ranges === 'string') {
-          try {
-            converted.expert_ranges = JSON.parse(converted.expert_ranges);
-          } catch (e) {
-            console.error('Failed to parse expert_ranges:', e);
-            converted.expert_ranges = {};
+        // Convert expert_ranges from various formats to {[param]: [min, max]}
+        if ('expert_ranges' in converted && converted.expert_ranges) {
+          if (typeof converted.expert_ranges === 'string') {
+            try {
+              converted.expert_ranges = JSON.parse(converted.expert_ranges);
+            } catch (e) {
+              console.error('Failed to parse expert_ranges:', e);
+              converted.expert_ranges = {};
+            }
+          }
+
+          if (typeof converted.expert_ranges === 'object' && !Array.isArray(converted.expert_ranges)) {
+            const normalizedRanges: Record<string, [number, number]> = {};
+            Object.entries(converted.expert_ranges as Record<string, any>).forEach(([paramName, rangeValue]) => {
+              if (!rangeValue) {
+                return;
+              }
+              let minVal: any;
+              let maxVal: any;
+              if (Array.isArray(rangeValue)) {
+                [minVal, maxVal] = rangeValue;
+              } else if (typeof rangeValue === 'object') {
+                minVal = (rangeValue as any).min ?? rangeValue[0];
+                maxVal = (rangeValue as any).max ?? rangeValue[1];
+              }
+              if (minVal === undefined || maxVal === undefined) {
+                return;
+              }
+              const minNum = typeof minVal === 'number' ? minVal : parseFloat(String(minVal));
+              const maxNum = typeof maxVal === 'number' ? maxVal : parseFloat(String(maxVal));
+              if (Number.isNaN(minNum) || Number.isNaN(maxNum)) {
+                return;
+              }
+              normalizedRanges[paramName] = [minNum, maxNum];
+            });
+            converted.expert_ranges = normalizedRanges;
           }
         }
 
@@ -84,6 +117,13 @@ const MultiStepUpload: React.FC<MultiStepUploadProps> = ({ onUploadSuccess }) =>
           } else if (converted[key] === 'false') {
             converted[key] = false;
           }
+        }
+
+        if ('similarity_method' in converted) {
+          if (!converted.importance_calculator && converted.similarity_method) {
+            converted.importance_calculator = converted.similarity_method;
+          }
+          delete converted.similarity_method;
         }
 
         return converted;
@@ -121,6 +161,11 @@ const MultiStepUpload: React.FC<MultiStepUploadProps> = ({ onUploadSuccess }) =>
         range_step: stepsConfig.range_step,
         projection_step: stepsConfig.projection_step,
         step_params: step_params,
+        ...(stepsConfig.filling_config &&
+          stepsConfig.filling_config.fixed_values &&
+          Object.keys(stepsConfig.filling_config.fixed_values).length > 0
+          ? { filling_config: stepsConfig.filling_config }
+          : {}),
       };
 
       const stepsBlob = new Blob([JSON.stringify(stepsData, null, 2)], {

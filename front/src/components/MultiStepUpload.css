@@ -559,6 +559,138 @@
   font-size: 14px;
 }
 
+/* Chip selectors & fixed values */
+.chip-section {
+  margin-top: 20px;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.chip {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #555;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip.selected {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fixed-value-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.fixed-value-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.fixed-value-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fixed-value-card-header button {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.fixed-value-card select,
+.fixed-value-card input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+/* Expert ranges */
+.range-section {
+  margin-top: 20px;
+}
+
+.range-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.range-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.range-card.active {
+  border-color: #667eea;
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.15);
+}
+
+.range-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.range-card-header label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.range-tag {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: #f0f4ff;
+  border-radius: 12px;
+  color: #667eea;
+}
+
+.range-inputs .form-field {
+  margin-bottom: 10px;
+}
+
+.range-inputs input {
+  width: 100%;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
 .file-size {
   color: #999;
   font-size: 12px;
