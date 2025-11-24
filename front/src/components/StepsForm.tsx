@@ -60,6 +60,7 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
     dimension_params: {
       topk: 20,
       exclude_params: [],
+      expert_params: [],
       similarity_method: 'shap',
       importance_calculator: 'shap',
     },
@@ -153,9 +154,7 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
         { value: 'pearson', label: 'Pearson' },
       ], description: 'Correlation method' },
     ],
-    'd_expert': [
-      { name: 'expert_params', label: 'Expert Parameters', type: 'text', default: '', description: 'Comma-separated parameter names' },
-    ],
+    'd_expert': [],
     'd_adaptive': [
       { name: 'initial_topk', label: 'Initial Top K', type: 'number', default: 30, min: 1, max: maxDimensions, description: maxDimensions ? `Initial number of dimensions (max: ${maxDimensions})` : 'Initial number of dimensions' },
       { name: 'reduction_ratio', label: 'Reduction Ratio', type: 'number', default: 0.2, min: 0, max: 1, step: 0.1, description: 'Ratio for dimension reduction' },
@@ -294,11 +293,24 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
     });
   };
 
+  const normalizeParamList = (value: any): string[] => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    }
+    return [];
+  };
+
   const toggleDimensionParamList = (field: 'exclude_params' | 'expert_params', paramName: string) => {
     if (!parameterNames.includes(paramName)) {
       return;
     }
-    const currentList: string[] = steps.dimension_params?.[field] || [];
+    const currentList: string[] = normalizeParamList(steps.dimension_params?.[field]);
     const exists = currentList.includes(paramName);
     const nextList = exists ? currentList.filter((name) => name !== paramName) : [...currentList, paramName];
     updateStepParam('dimension_params', field, nextList);
@@ -509,8 +521,8 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
         if (previousParams.exclude_params) {
           defaultParams.exclude_params = previousParams.exclude_params;
         }
-        if (value === 'd_expert' && previousParams.expert_params) {
-          defaultParams.expert_params = previousParams.expert_params;
+        if (value === 'd_expert') {
+          defaultParams.expert_params = normalizeParamList(previousParams.expert_params);
         }
         if (value === 'd_adaptive') {
           const adaptiveKeys = [
@@ -696,7 +708,7 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
   };
 
   const renderExcludeSection = () => {
-    if (!configSpace || steps.dimension_step === 'd_none' || parameterNames.length === 0) {
+    if (!configSpace || parameterNames.length === 0 || steps.dimension_step === 'd_none' || steps.dimension_step === 'd_expert') {
       return null;
     }
     const selected = steps.dimension_params?.exclude_params || [];
@@ -727,7 +739,7 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
     if (!configSpace || steps.dimension_step !== 'd_expert' || parameterNames.length === 0) {
       return null;
     }
-    const selected = steps.dimension_params?.expert_params || [];
+    const selected = normalizeParamList(steps.dimension_params?.expert_params);
     return (
       <div className="chip-section">
         <h4>Expert 维度选择</h4>
@@ -998,12 +1010,12 @@ const StepsForm: React.FC<StepsFormProps> = ({ onNext, onBack, initialData, conf
           </ul>
         </div>
 
-        <div className="form-section">
+        {/* <div className="form-section">
           <div className="form-field">
             <label>Filling Strategy & Fixed Parameters</label>
             {renderFixedValueSection()}
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="form-actions">
