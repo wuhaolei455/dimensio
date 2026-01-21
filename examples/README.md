@@ -199,7 +199,66 @@ step = AdaptiveDimensionStep(
 
 ---
 
-### 4. Multi-Source Task Transfer Learning (`multi_single_source.py`)
+### 4. Visualization Example (`visualization_example.py`)
+
+**Suitable for**: Users who want to visualize compression results  
+**Content**: Demonstrates Dimensio's visualization features
+
+#### Two Visualization Modes:
+
+1. **Basic Mode (Static HTML)**
+   - Generates standalone HTML file using ECharts
+   - Can be opened offline in any browser
+   - Easy to share with collaborators
+   - No server required
+
+2. **Advanced Mode (Local Server)**
+   - Starts Flask server with React frontend
+   - Supports real-time data refresh
+   - Full interactive visualization
+   - Requires: `pip install flask flask-cors`
+
+#### Visualization Components:
+- Compression Summary (dimension reduction, compression ratios)
+- Range Compression Details
+- Parameter Importance Analysis
+- Multi-Task Heatmap (if available)
+- Source Task Similarities (if available)
+
+**Run**:
+```bash
+cd examples
+python visualization_example.py
+```
+
+**Output**: 
+- `./results/visualization_basic/visualization.html` - Static HTML visualization
+- `./results/visualization_basic/compression_history.json` - Compression data
+
+**Key Code Snippets**:
+```python
+from dimensio import Compressor, SHAPDimensionStep, BoundaryRangeStep
+
+# Method 1: Auto-visualization on compression
+compressor = Compressor(
+    config_space=config_space,
+    steps=[SHAPDimensionStep(topk=6), BoundaryRangeStep(top_ratio=0.8)],
+    visualization='basic',    # 'none', 'basic', or 'advanced'
+    auto_open_html=True,      # Auto-open browser
+)
+surrogate_space, _ = compressor.compress_space(space_history=[history])
+
+# Method 2: Manual visualization
+compressor.visualize_html(mode='basic', open_html=True)
+
+# Method 3: Standalone function
+from dimensio import visualize_compression
+visualize_compression('./results', mode='advanced', port=8050)
+```
+
+---
+
+### 5. Multi-Source Task Transfer Learning (`multi_single_source.py`)
 
 **Suitable for**: Users who want to leverage historical task data to accelerate new task optimization  
 **Content**: Demonstrates how to use historical data from multiple source tasks to optimize new target tasks

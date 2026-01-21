@@ -59,6 +59,13 @@ from .api import (
     compress_from_config,
 )
 
+# Visualization
+from .viz import (
+    visualize_compression,
+    start_visualization_server,
+    generate_static_html,
+)
+
 _COMPRESSOR_REGISTRY = {
     'pipeline': Compressor,
     'shap': None,
@@ -202,46 +209,46 @@ def get_compressor(compressor_type: Optional[str] = None,
 
 
 __all__ = [
-    # Logging (deprecated - use openbox logger directly)
-    # 'setup_logging',
-    # 'disable_logging', 
-    # 'enable_logging',
-    # 'get_logger',
-    # 'set_logger_factory',
-    
     # Core classes
     'CompressionStep',
     'Compressor',
     'CompressionPipeline',
     'OptimizerProgress',
     
+    # Dimension selection steps
     'DimensionSelectionStep',
     'SHAPDimensionStep',
     'ExpertDimensionStep',
     'CorrelationDimensionStep',
     'AdaptiveDimensionStep',
 
+    # Range compression steps
     'RangeCompressionStep',
     'BoundaryRangeStep',
     'ExpertRangeStep',
     'SHAPBoundaryRangeStep',
     'KDEBoundaryRangeStep',
 
+    # Projection steps
     'TransformativeProjectionStep',
     'REMBOProjectionStep',
     'HesBOProjectionStep',
     'KPCAProjectionStep',
     'QuantizationProjectionStep',
     
+    # Sampling strategies
     'SamplingStrategy',
     'StandardSamplingStrategy',
     'MixedRangeSamplingStrategy',
     
+    # Utilities
     'load_expert_params',
     'create_space_from_ranges',
     
+    # Factory function
     'get_compressor',
     
+    # API functions
     'create_step_from_string',
     'create_steps_from_strings',
     'get_available_step_strings',
@@ -251,6 +258,10 @@ __all__ = [
     'get_available_filling_strings',
     'validate_filling_string',
     'get_filling_info',
-
     'compress_from_config',
+    
+    # Visualization
+    'visualize_compression',
+    'start_visualization_server',
+    'generate_static_html',
 ]

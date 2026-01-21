@@ -199,7 +199,66 @@ step = AdaptiveDimensionStep(
 
 ---
 
-### 4. 多源任务迁移学习 (`multi_single_source.py`)
+### 4. 可视化示例 (`visualization_example.py`)
+
+**适合**: 想要可视化压缩结果的用户  
+**内容**: 演示 Dimensio 的可视化功能
+
+#### 两种可视化模式:
+
+1. **基础模式 (静态 HTML)**
+   - 使用 ECharts 生成独立 HTML 文件
+   - 可在任何浏览器离线打开
+   - 方便与他人分享
+   - 无需服务器
+
+2. **高级模式 (本地服务器)**
+   - 启动 Flask 服务器与 React 前端
+   - 支持实时数据刷新
+   - 完整的交互式可视化
+   - 需要安装: `pip install flask flask-cors`
+
+#### 可视化组件:
+- 压缩摘要（维度减少、压缩比）
+- 范围压缩详情
+- 参数重要性分析
+- 多任务热力图（如有）
+- 源任务相似度（如有）
+
+**运行**:
+```bash
+cd examples
+python visualization_example.py
+```
+
+**输出**: 
+- `./results/visualization_basic/visualization.html` - 静态 HTML 可视化
+- `./results/visualization_basic/compression_history.json` - 压缩数据
+
+**关键代码片段**:
+```python
+from dimensio import Compressor, SHAPDimensionStep, BoundaryRangeStep
+
+# 方式1: 压缩时自动启动可视化
+compressor = Compressor(
+    config_space=config_space,
+    steps=[SHAPDimensionStep(topk=6), BoundaryRangeStep(top_ratio=0.8)],
+    visualization='basic',    # 'none', 'basic', 'advanced'
+    auto_open_html=True,      # 自动打开浏览器
+)
+surrogate_space, _ = compressor.compress_space(space_history=[history])
+
+# 方式2: 手动调用可视化
+compressor.visualize_html(mode='basic', open_html=True)
+
+# 方式3: 独立函数
+from dimensio import visualize_compression
+visualize_compression('./results', mode='advanced', port=8050)
+```
+
+---
+
+### 5. 多源任务迁移学习 (`multi_single_source.py`)
 
 **适合**: 想要利用历史任务数据加速新任务优化的用户  
 **内容**: 展示如何使用多个源任务的历史数据来优化新的目标任务

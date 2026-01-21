@@ -15,6 +15,25 @@ if TYPE_CHECKING:
 
 
 class Compressor(ABC):
+    """
+    Main class for configuration space compression.
+    
+    The Compressor supports optional visualization of compression results:
+    - 'none': No visualization (default)
+    - 'basic': Generate static HTML file (no server required)
+    - 'advanced': Start local HTTP server for full interactivity
+    
+    Example:
+        >>> compressor = Compressor(
+        ...     config_space=config_space,
+        ...     steps=steps,
+        ...     visualization='advanced',  # Enable visualization
+        ...     auto_open_html=True,       # Auto-open browser
+        ... )
+        >>> surrogate_space, sample_space = compressor.compress_space(space_history)
+        >>> # Browser opens automatically with visualization
+    """
+    
     def __init__(self, 
                  config_space: ConfigurationSpace, 
                  filling_strategy: Optional['FillingStrategy'] = None,
@@ -22,11 +41,39 @@ class Compressor(ABC):
                  steps: Optional[List['CompressionStep']] = None,
                  save_compression_info: bool = False,
                  output_dir: Optional[str] = None,
+                 visualization: str = 'none',
+                 auto_open_html: bool = False,
+                 visualization_port: int = 8050,
                  **kwargs):
+        """
+        Initialize the Compressor.
+        
+        Args:
+            config_space: The original configuration space to compress
+            filling_strategy: Strategy for filling missing parameter values
+            pipeline: Pre-configured compression pipeline
+            steps: List of compression steps (alternative to pipeline)
+            save_compression_info: Whether to save compression info to files
+            output_dir: Directory for output files
+            visualization: Visualization mode - 'none', 'basic', or 'advanced'
+            auto_open_html: Whether to automatically open browser after compression
+            visualization_port: Port for visualization server (advanced mode only)
+            **kwargs: Additional arguments (e.g., seed)
+        """
         self.origin_config_space = config_space
         self.sample_space: Optional[ConfigurationSpace] = None
         self.surrogate_space: Optional[ConfigurationSpace] = None
         self.unprojected_space: Optional[ConfigurationSpace] = None  # Target space after unprojection
+        
+        # Visualization settings
+        self.visualization = visualization.lower()
+        self.auto_open_html = auto_open_html
+        self.visualization_port = visualization_port
+        self._visualization_server = None
+        
+        # If visualization is enabled, also enable save_compression_info
+        if self.visualization != 'none':
+            save_compression_info = True
         
         self.save_compression_info = save_compression_info
         self.output_dir = output_dir or './results/compression'
@@ -58,6 +105,16 @@ class Compressor(ABC):
     def compress_space(self, 
                       space_history: Optional[List] = None,
                       source_similarities: Optional[Dict[int, float]] = None) -> Tuple[ConfigurationSpace, ConfigurationSpace]:
+        """
+        Compress the configuration space.
+        
+        Args:
+            space_history: Historical data for compression decisions
+            source_similarities: Similarity scores for source tasks (transfer learning)
+        
+        Returns:
+            Tuple of (surrogate_space, sample_space)
+        """
         if self.pipeline is not None:
             # Use pipeline mode
             self.surrogate_space, self.sample_space = self.pipeline.compress_space(
@@ -74,9 +131,24 @@ class Compressor(ABC):
             if self.save_compression_info:
                 self._save_compression_info(event='initial_compression')
             
+            # Trigger visualization if enabled
+            if self.visualization != 'none':
+                self._trigger_visualization()
+            
             return self.surrogate_space, self.sample_space
         else:
             return self._compress_space_impl(space_history)
+    
+    def _trigger_visualization(self):
+        """Trigger visualization based on the visualization mode."""
+        try:
+            self.visualize_html(
+                open_html=self.auto_open_html,
+                mode=self.visualization,
+                port=self.visualization_port
+            )
+        except Exception as e:
+            logger.warning(f"Failed to start visualization: {e}")
 
     def get_unprojected_space(self) -> ConfigurationSpace:
         return self.pipeline.unprojected_space
@@ -312,6 +384,7 @@ class Compressor(ABC):
         logger.info(f"Updated compression history: {history_filepath}")
     
     def get_compression_summary(self) -> dict:
+        """Get a summary of the compression results."""
         if not self.sample_space or not self.surrogate_space:
             return {}
         
@@ -324,3 +397,70 @@ class Compressor(ABC):
             'n_updates': len(self.compression_history),
             'pipeline_steps': [step.name for step in self.pipeline.steps] if self.pipeline else []
         }
+    
+    def visualize_html(
+        self,
+        open_html: bool = True,
+        mode: str = 'basic',
+        port: int = 8050,
+        host: str = '127.0.0.1'
+    ) -> str:
+        """
+        Generate and open visualization for compression results.
+        
+        This method provides two modes:
+        - 'basic': Generate a standalone HTML file (no server required)
+        - 'advanced': Start a local HTTP server for full interactivity
+        
+        Args:
+            open_html: Whether to automatically open the browser
+            mode: Visualization mode - 'basic' or 'advanced'
+            port: Server port (only for advanced mode)
+            host: Server host (only for advanced mode, use '0.0.0.0' for remote access)
+        
+        Returns:
+            Path to HTML file (basic mode) or server URL (advanced mode)
+        
+        Example:
+            >>> # After compression
+            >>> compressor.visualize_html(mode='basic')  # Static HTML
+            >>> compressor.visualize_html(mode='advanced')  # Local server
+        """
+        # Ensure compression data is saved
+        if not self.compression_history:
+            self._save_compression_info(event='visualization')
+        
+        mode = mode.lower()
+        
+        if mode == 'basic':
+            from ..viz.html_generator import generate_static_html
+            return generate_static_html(
+                data_dir=self.output_dir,
+                open_browser=open_html
+            )
+        elif mode == 'advanced':
+            from ..viz.server import VisualizationServer
+            
+            # Stop existing server if running
+            if self._visualization_server is not None and self._visualization_server.is_running:
+                self._visualization_server.stop()
+            
+            # Create and start new server
+            self._visualization_server = VisualizationServer(
+                data_dir=self.output_dir,
+                port=port,
+                host=host
+            )
+            
+            return self._visualization_server.start(
+                open_browser=open_html,
+                blocking=False
+            )
+        else:
+            raise ValueError(f"Invalid visualization mode: {mode}. Use 'basic' or 'advanced'.")
+    
+    def stop_visualization_server(self):
+        """Stop the visualization server if running."""
+        if self._visualization_server is not None and self._visualization_server.is_running:
+            self._visualization_server.stop()
+            logger.info("Visualization server stopped")

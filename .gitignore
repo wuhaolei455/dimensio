@@ -136,6 +136,11 @@ logs/
 *.txt.bak
 *_backup.*
 
+# Visualization build outputs
+dimensio/viz/static/
+dimensio/viz/frontend/node_modules/
+dimensio/viz/frontend/dist/
+
 # Development and testing
 docs/
 test_*.py

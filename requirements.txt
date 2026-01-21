@@ -12,3 +12,7 @@ matplotlib>=3.3.0
 # OpenBox dependency (for History and space utilities)
 openbox>=0.8.0
 
+# Web visualization dependencies (optional, for advanced visualization mode)
+# Install with: pip install dimensio[viz]
+flask>=2.0.0
+flask-cors>=3.0.0
