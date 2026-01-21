@@ -46,6 +46,7 @@ export const useLazyChart = (options: UseLazyChartOptions = {}): UseLazyChartRet
   const [isVisible, setIsVisible] = useState(disabled);
   const [hasLoaded, setHasLoaded] = useState(disabled);
   const onVisibleRef = useRef(onVisible);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // 更新回调引用
   useEffect(() => {
@@ -66,6 +67,11 @@ export const useLazyChart = (options: UseLazyChartOptions = {}): UseLazyChartRet
     const element = ref.current;
     if (!element) return;
 
+    // 清理之前的 observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
@@ -75,6 +81,7 @@ export const useLazyChart = (options: UseLazyChartOptions = {}): UseLazyChartRet
           onVisibleRef.current?.();
           // 一旦加载，停止观察
           observer.disconnect();
+          observerRef.current = null;
         }
       },
       {
@@ -83,10 +90,14 @@ export const useLazyChart = (options: UseLazyChartOptions = {}): UseLazyChartRet
       }
     );
 
+    observerRef.current = observer;
     observer.observe(element);
 
     return () => {
-      observer.disconnect();
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
     };
   }, [threshold, rootMargin, hasLoaded, disabled]);
 

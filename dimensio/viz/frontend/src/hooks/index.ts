@@ -33,6 +33,10 @@ export {
 export { useLazyChart } from './useLazyChart';
 export { useChunkedData } from './useChunkedData';
 
+// 状态机 Hooks
+export { useUploadWizard } from './useUploadWizard';
+export type { UseUploadWizardReturn, WizardContext, UploadResponse } from './useUploadWizard';
+
 // 类型重新导出
 export type {
   UseCompressionDataReturn,

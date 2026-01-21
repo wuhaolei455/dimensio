@@ -13,7 +13,8 @@
 import React from 'react';
 import { useCompressionData } from './hooks';
 import CompressionSummary from './components/CompressionSummary';
-import MultiStepUpload from './components/MultiStepUpload';
+// import MultiStepUpload from './components/MultiStepUpload';
+import MultiStepUploadFSM from './components/MultiStepUploadFSM'; // 使用状态机版本
 import LargeDataChartDemo from './components/LargeDataChartDemo';
 import {
   RangeCompressionContainer,
@@ -27,7 +28,7 @@ import './App.css';
 /** Loading 状态 */
 const LoadingState: React.FC<{ onUploadSuccess: () => void }> = ({ onUploadSuccess }) => (
   <div className="app-container">
-    <MultiStepUpload onUploadSuccess={onUploadSuccess} />
+    <MultiStepUploadFSM onUploadSuccess={onUploadSuccess} />
     <div className="loading">Loading compression history...</div>
   </div>
 );
@@ -39,7 +40,7 @@ const ErrorState: React.FC<{
   onRetry: () => void;
 }> = ({ error, onUploadSuccess, onRetry }) => (
   <div className="app-container">
-    <MultiStepUpload onUploadSuccess={onUploadSuccess} />
+    <MultiStepUploadFSM onUploadSuccess={onUploadSuccess} />
     <div className="error-container">
       <div className="error">Error: {error || 'No data available'}</div>
       <button className="refresh-button" onClick={onRetry}>Retry</button>
@@ -56,8 +57,8 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {/* 固定按钮 */}
-      <MultiStepUpload onUploadSuccess={refetch} />
+      {/* 固定按钮 - 使用状态机版本 */}
+      <MultiStepUploadFSM onUploadSuccess={refetch} />
       <button className="refresh-button-main" onClick={refetch} title="Refresh">⟳ Refresh</button>
 
       {/* Header */}
