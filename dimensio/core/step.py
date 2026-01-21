@@ -6,8 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List, Dict, TYPE_CHECKING
 from openbox.utils.history import History
 from ConfigSpace import ConfigurationSpace
-import logging
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 from .progress import OptimizerProgress
 if TYPE_CHECKING:

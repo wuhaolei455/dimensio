@@ -2,12 +2,10 @@ import copy
 import numpy as np
 from typing import Optional, List, Tuple, Dict
 from openbox.utils.history import History
-import logging
 from ConfigSpace import ConfigurationSpace
 from sklearn.ensemble import RandomForestRegressor
 import shap
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 from .boundary import BoundaryRangeStep
 from ...utils import (
     create_space_from_ranges,

@@ -3,10 +3,8 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict
 from openbox.utils.history import History
-import logging
 from ConfigSpace import ConfigurationSpace
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 from ...utils import (
     extract_numeric_hyperparameters,
     extract_top_samples_from_history,

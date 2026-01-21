@@ -1,8 +1,8 @@
 from typing import Type, Optional
 from ConfigSpace import ConfigurationSpace, Configuration
 
-# Logging configuration
-from .utils.logger import setup_logging, disable_logging, enable_logging, get_logger
+# Logging configuration (deprecated - use openbox logger directly)
+# from .utils.logger import setup_logging, disable_logging, enable_logging, get_logger, set_logger_factory
 
 from .core import (
     CompressionStep,
@@ -202,11 +202,12 @@ def get_compressor(compressor_type: Optional[str] = None,
 
 
 __all__ = [
-    # Logging
-    'setup_logging',
-    'disable_logging', 
-    'enable_logging',
-    'get_logger',
+    # Logging (deprecated - use openbox logger directly)
+    # 'setup_logging',
+    # 'disable_logging', 
+    # 'enable_logging',
+    # 'get_logger',
+    # 'set_logger_factory',
     
     # Core classes
     'CompressionStep',

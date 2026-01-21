@@ -4,11 +4,8 @@ Provides functions to create filling strategy instances from string identifiers 
 """
 
 from typing import Optional, Dict, Any
-import logging
-
 from ..filling import FillingStrategy, DefaultValueFilling
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 _FILLING_REGISTRY = {
     'default': {

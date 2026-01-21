@@ -10,9 +10,9 @@ This module provides a high-level API for frontend applications to:
 import json
 import sys
 import argparse
+import logging
 from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
-import logging
 
 from ConfigSpace import ConfigurationSpace, Configuration
 from ConfigSpace.hyperparameters import (
@@ -32,8 +32,7 @@ from .filling_factory import (
     create_filling_from_string,
     create_filling_from_config,
 )
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 
 def _coerce_fixed_value_mapping(

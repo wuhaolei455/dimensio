@@ -1,10 +1,8 @@
 import copy
-import logging
 from typing import List, Optional, Tuple, Dict
 from openbox.utils.history import History
 from ConfigSpace import ConfigurationSpace
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 from .step import CompressionStep
 from .progress import OptimizerProgress

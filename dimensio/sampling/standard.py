@@ -2,8 +2,6 @@ import random
 from typing import List, Optional, Tuple
 from ConfigSpace import ConfigurationSpace, Configuration
 from .base import SamplingStrategy
-import logging
-logger = logging.getLogger(__name__)
 
 
 class StandardSamplingStrategy(SamplingStrategy):    

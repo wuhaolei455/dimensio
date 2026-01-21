@@ -2,9 +2,7 @@ import copy
 from typing import Optional, List, Dict
 from openbox.utils.history import History
 from ConfigSpace import ConfigurationSpace
-import logging
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 from ...core.step import CompressionStep
 

@@ -5,8 +5,7 @@ from typing import List, Dict, Tuple, Optional
 from ConfigSpace import ConfigurationSpace
 import json
 import os
-import logging
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (12, 8)

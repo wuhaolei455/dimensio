@@ -2,15 +2,11 @@ import json
 import copy
 import numpy as np
 import pandas as pd
-import logging
 from typing import Dict, Any, Tuple, List, Optional, Union
 from openbox.utils.history import History
 from ConfigSpace import ConfigurationSpace, Configuration
 from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, UniformFloatHyperparameter
-from openbox import space as sp
-
-_logger = logging.getLogger(__name__)
-
+from openbox import space as sp, logger as _logger
 
 def create_param(key, value):
     q_val = value.get('q', None)

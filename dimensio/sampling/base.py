@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 from ConfigSpace import ConfigurationSpace, Configuration
-import logging
-logger = logging.getLogger(__name__)
 
 
 class SamplingStrategy(ABC):

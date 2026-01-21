@@ -4,10 +4,8 @@ from openbox.utils.history import History
 from ConfigSpace import ConfigurationSpace, Configuration
 import json
 import os
-import logging
 from datetime import datetime
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 if TYPE_CHECKING:
     from ..sampling import SamplingStrategy
@@ -225,8 +223,12 @@ class Compressor(ABC):
     def _save_compression_info(
         self,
         event: str = 'compression',
-        iteration: Optional[int] = None
+        iteration: Optional[int] = None,
+        output_dir: Optional[str] = None
     ):
+        if output_dir is None:
+            output_dir = self.output_dir
+        
         if not self.pipeline:
             logger.warning("No pipeline configured, cannot save compression info")
             return
@@ -288,19 +290,19 @@ class Compressor(ABC):
         
         self.compression_history.append(info)
         
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
         
         timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         event_filename = f'compression_{event}_{timestamp_str}.json'
-        event_filepath = os.path.join(self.output_dir, event_filename)
+        event_filepath = os.path.join(output_dir, event_filename)
         
         with open(event_filepath, 'w') as f:
             json.dump(info, f, indent=2)
         logger.info(f"Saved compression info to {event_filepath}")
         
         history_filename = 'compression_history.json'
-        history_filepath = os.path.join(self.output_dir, history_filename)
+        history_filepath = os.path.join(output_dir, history_filename)
         
         with open(history_filepath, 'w') as f:
             json.dump({

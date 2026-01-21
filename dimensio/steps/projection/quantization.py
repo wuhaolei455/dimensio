@@ -1,12 +1,10 @@
 from openbox.utils.history import History
-import logging
 from ConfigSpace import ConfigurationSpace, Configuration
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 from .base import TransformativeProjectionStep
 from ...core import OptimizerProgress
 

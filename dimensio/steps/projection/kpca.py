@@ -2,13 +2,11 @@ import copy
 import numpy as np
 from typing import Optional, List, Dict
 from openbox.utils.history import History
-import logging
 from ConfigSpace import ConfigurationSpace, Configuration
 import ConfigSpace as CS
 from sklearn.decomposition import KernelPCA
 from sklearn.preprocessing import StandardScaler
-
-logger = logging.getLogger(__name__)
+from openbox import logger
 from .base import TransformativeProjectionStep
 from ...utils import (
     extract_numeric_hyperparameters,

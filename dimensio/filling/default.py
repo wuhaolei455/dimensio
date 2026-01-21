@@ -1,7 +1,6 @@
 from typing import Dict, Any
 from ConfigSpace import ConfigurationSpace
-import logging
-logger = logging.getLogger(__name__)
+from openbox import logger
 
 from .base import FillingStrategy
 
