@@ -5,18 +5,33 @@
  * - useCompressionData: 数据获取层
  * - useCompressionPipeline: 业务逻辑层
  * - useChartVisibility: 视图控制层
+ * - useChartConfig: 图表配置层
  */
 
+// 数据 Hooks
 export { useCompressionData } from './useCompressionData';
 export { useCompressionPipeline } from './useCompressionPipeline';
 export { useChartVisibility } from './useChartVisibility';
 
-// 类型从 types 目录导入，这里重新导出方便使用
+// 图表配置 Hooks
+export {
+  useChartConfig,
+  useBarChartConfig,
+  useHorizontalBarConfig,
+  useLineChartConfig,
+  useHeatmapConfig,
+  useParameterImportanceConfig,
+  useDimensionReductionConfig,
+  useCompressionRatioConfig,
+  useDimensionEvolutionConfig,
+  useMultiTaskHeatmapConfig,
+} from './useChartConfig';
+
+// 类型重新导出
 export type {
   UseCompressionDataReturn,
   UseCompressionPipelineReturn,
   UseChartVisibilityReturn,
   CompressionStats,
-  ChartVisibility,
   ChartMockData,
 } from '../types';

@@ -33,11 +33,11 @@ const RangeCompressionContainer: React.FC<RangeCompressionContainerProps> = ({ d
 
   return (
     <>
-      {rangeCompressionSteps.map((step, idx) => (
-        <section key={`range-${idx}`} className="chart-section">
+      {rangeCompressionSteps.map(({ step, index }) => (
+        <section key={`range-${index}`} className="chart-section">
           <RangeCompression
             step={step}
-            stepIndex={activeSteps.indexOf(step) + 1}
+            stepIndex={index + 1}
           />
         </section>
       ))}

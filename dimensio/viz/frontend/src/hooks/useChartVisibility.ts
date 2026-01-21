@@ -8,9 +8,9 @@
 import { useMemo } from 'react';
 import {
   CompressionHistory,
-  ChartVisibility,
   ChartMockData,
   UseChartVisibilityReturn,
+  RangeCompressionStepInfo,
 } from '../types';
 import { useCompressionPipeline } from './useCompressionPipeline';
 
@@ -57,23 +57,24 @@ export const useChartVisibility = (
     return event?.performance_metrics?.source_similarities !== undefined;
   }, [event]);
 
-  // 找出需要显示范围压缩的步骤
-  const rangeCompressionSteps = useMemo(() => {
-    return activeSteps.filter(step =>
-      step.compression_info &&
-      step.compression_info.compressed_params &&
-      step.compression_info.compressed_params.length > 0
-    );
+  // 找出需要显示范围压缩的步骤（包含索引信息）
+  const rangeCompressionSteps = useMemo((): RangeCompressionStepInfo[] => {
+    return activeSteps
+      .map((step, index) => ({ step, index }))
+      .filter(({ step }) =>
+        step.compression_info &&
+        step.compression_info.compressed_params &&
+        step.compression_info.compressed_params.length > 0
+      );
   }, [activeSteps]);
 
   // 图表可见性配置
-  const visibility = useMemo((): ChartVisibility => ({
+  const visibility = useMemo(() => ({
     showParameterImportance: hasImportanceBasedDimension && !!dimensionStepWithCalculator,
     showDimensionEvolution: hasAdaptive && hasAdaptiveUpdateHistory,
     showMultiTaskHeatmap: hasMultiTaskData,
     showSourceSimilarities: hasTransferLearningData,
     showRangeCompression: rangeCompressionSteps.length > 0,
-    rangeCompressionSteps,
   }), [
     hasImportanceBasedDimension,
     dimensionStepWithCalculator,
@@ -81,7 +82,7 @@ export const useChartVisibility = (
     hasAdaptiveUpdateHistory,
     hasMultiTaskData,
     hasTransferLearningData,
-    rangeCompressionSteps,
+    rangeCompressionSteps.length,
   ]);
 
   // 准备图表数据（真实或模拟）
@@ -134,6 +135,7 @@ export const useChartVisibility = (
   return {
     ...visibility,
     chartData,
+    rangeCompressionSteps,
   };
 };
 

@@ -1,225 +1,95 @@
 /**
  * CompressionSummary 组件
  * 
- * 重构后使用 useCompressionPipeline Hook 复用业务逻辑
+ * 重构后使用:
+ * - useCompressionPipeline Hook 复用业务逻辑
+ * - useDimensionReductionConfig / useCompressionRatioConfig 图表配置
+ * 
+ * 优化效果:
  * - 原代码: 316 行
- * - 重构后: ~200 行 (减少 ~35%)
+ * - 重构后: ~180 行 (减少 ~43%)
+ * - 图表配置使用 useMemo 缓存，FCP 优化
  */
 
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { CompressionHistory } from '../types';
 import { useCompressionPipeline } from '../hooks';
+import { 
+  useDimensionReductionConfig, 
+  useCompressionRatioConfig,
+  useBarChartConfig,
+  chartHeights,
+} from '../charts';
 
 interface CompressionSummaryProps {
   data: CompressionHistory;
 }
 
 const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
-  // ✅ 复用 Hook - 不再需要手写 40+ 行过滤逻辑
+  // ✅ 复用 Hook - 业务逻辑
   const { event, activeSteps, getCompressionStats } = useCompressionPipeline(data);
-
-  // 获取压缩统计
   const stats = useMemo(() => getCompressionStats(), [getCompressionStats]);
 
-  // 如果没有数据，显示空状态
-  if (!event || !stats) {
-    return (
-      <div style={{ width: '100%', background: '#fff', padding: '40px', borderRadius: '8px', textAlign: 'center' }}>
-        <p style={{ color: '#999' }}>No compression data available</p>
-      </div>
-    );
-  }
+  // ✅ 准备图表数据
+  const stepNames = useMemo(() => 
+    stats ? ['Original', ...activeSteps.map(s => s.name)] : null,
+    [stats, activeSteps]
+  );
 
-  // Panel 1: Dimension Reduction Across Steps
-  const getDimensionReductionOption = () => {
-    const stepNames = ['Original', ...activeSteps.map(s => s.name)];
+  const compressionStepNames = useMemo(() =>
+    activeSteps.map(s => s.name),
+    [activeSteps]
+  );
 
-    return {
-      title: {
-        text: 'Dimension Reduction Across Steps',
-        left: 'center',
-        textStyle: { fontWeight: 'bold', fontSize: 14 },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-      },
-      xAxis: {
-        type: 'category',
-        data: stepNames,
-        axisLabel: {
-          rotate: 45,
-          fontSize: 10,
-          interval: 0,
-          overflow: 'truncate',
-          width: 80,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Parameters',
-        nameTextStyle: { fontWeight: 'bold' },
-      },
-      grid: { left: '12%', right: '8%', bottom: '25%', top: '15%' },
-      series: [
-        {
-          type: 'bar',
-          data: stats.dimensionFlow.map((dim, idx) => ({
-            value: dim,
-            itemStyle: {
-              color: `rgba(64, 158, 255, ${0.4 + idx * 0.15})`,
-            },
-          })),
-          label: {
-            show: true,
-            position: 'top',
-            fontWeight: 'bold',
-          },
-          barMaxWidth: 50,
-        },
-      ],
-    };
-  };
+  const compressionRatios = useMemo(() => 
+    stats ? stats.dimensionFlow.slice(1).map(dim => dim / stats.originalDim) : null,
+    [stats]
+  );
 
-  // Panel 2: Compression Ratio by Step
-  const getCompressionRatioOption = () => {
-    const compressionRatios = stats.dimensionFlow.slice(1).map((dim, idx) => ({
-      name: activeSteps[idx].name,
-      ratio: dim / stats.originalDim,
-    }));
+  // ✅ 使用图表配置 Hooks（自动 useMemo 缓存）
+  const { option: dimReductionOption } = useDimensionReductionConfig(
+    stepNames,
+    stats?.dimensionFlow ?? null
+  );
 
-    return {
-      title: {
-        text: 'Compression Ratio by Step',
-        left: 'center',
-        textStyle: { fontWeight: 'bold', fontSize: 14 },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        formatter: (params: any) => {
-          const d = params[0];
-          return `${d.name}<br/>Ratio: ${(d.value * 100).toFixed(1)}%`;
-        },
-      },
-      xAxis: {
-        type: 'category',
-        data: compressionRatios.map(r => r.name),
-        axisLabel: {
-          rotate: 45,
-          fontSize: 10,
-          interval: 0,
-          overflow: 'truncate',
-          width: 80,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Ratio',
-        nameTextStyle: { fontWeight: 'bold' },
-        max: 1,
-      },
-      grid: { left: '12%', right: '8%', bottom: '25%', top: '15%' },
-      series: [
-        {
-          type: 'bar',
-          data: compressionRatios.map(r => ({
-            value: r.ratio,
-            itemStyle: {
-              color: r.ratio > 0.7 ? '#f56c6c' : r.ratio > 0.4 ? '#e6a23c' : '#67c23a',
-            },
-          })),
-          label: {
-            show: true,
-            position: 'top',
-            formatter: (params: any) => `${(params.value * 100).toFixed(1)}%`,
-            fontWeight: 'bold',
-          },
-          barMaxWidth: 50,
-        },
-      ],
-    };
-  };
+  const { option: ratioOption } = useCompressionRatioConfig(
+    compressionStepNames,
+    compressionRatios
+  );
 
-  // Panel 3: Range/Quantization Compression Statistics
-  const getRangeCompressionStatsOption = () => {
+  // 范围压缩统计数据
+  const rangeCompressionData = useMemo(() => {
     const compressionStep = activeSteps.find(s =>
       s.compression_info &&
       s.compression_info.compressed_params &&
       s.compression_info.compressed_params.length > 0
     );
 
-    if (!compressionStep?.compression_info) {
-      return {
-        title: {
-          text: 'Range/Quantization Compression Statistics',
-          left: 'center',
-          textStyle: { fontWeight: 'bold', fontSize: 14 },
-        },
-        graphic: {
-          type: 'text',
-          left: 'center',
-          top: 'middle',
-          style: {
-            text: 'No range/quantization compression data',
-            fontSize: 14,
-            fill: '#999',
-          },
-        },
-      };
-    }
-
-    const nCompressed = compressionStep.compression_info.compressed_params?.length || 0;
-    const nUnchanged = compressionStep.compression_info.unchanged_params?.length || 0;
+    if (!compressionStep?.compression_info) return null;
 
     return {
-      title: {
-        text: 'Range/Quantization Compression Statistics',
-        left: 'center',
-        textStyle: { fontWeight: 'bold', fontSize: 14 },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-      },
-      legend: {
-        data: ['Compressed', 'Unchanged'],
-        bottom: 0,
-      },
-      xAxis: {
-        type: 'category',
-        data: [`Step ${compressionStep.step_index + 1}\n${compressionStep.name}`],
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Parameters',
-        nameTextStyle: { fontWeight: 'bold' },
-      },
-      grid: { left: '12%', right: '8%', bottom: '15%', top: '15%' },
-      series: [
-        {
-          name: 'Compressed',
-          type: 'bar',
-          stack: 'total',
-          data: [nCompressed],
-          itemStyle: { color: '#ff7875' },
-          label: { show: true, position: 'inside' },
-        },
-        {
-          name: 'Unchanged',
-          type: 'bar',
-          stack: 'total',
-          data: [nUnchanged],
-          itemStyle: { color: '#91d5ff' },
-          label: { show: true, position: 'inside' },
-        },
-      ],
+      step: compressionStep,
+      nCompressed: compressionStep.compression_info.compressed_params?.length || 0,
+      nUnchanged: compressionStep.compression_info.unchanged_params?.length || 0,
     };
-  };
+  }, [activeSteps]);
 
-  // Panel 4: Text Summary - 使用 stats 简化
-  const getSummaryText = () => {
+  // 范围压缩统计图表配置
+  const { option: rangeStatsOption } = useBarChartConfig(
+    rangeCompressionData ? {
+      categories: [`Step ${rangeCompressionData.step.step_index + 1}\n${rangeCompressionData.step.name}`],
+      values: [rangeCompressionData.nCompressed],
+    } : null,
+    {
+      title: { text: 'Range/Quantization Compression Statistics' },
+    }
+  );
+
+  // 文本摘要
+  const getSummaryText = useMemo(() => {
+    if (!event || !stats) return '';
+
     let text = `Compression Summary\n${'='.repeat(40)}\n\n`;
     text += `Original dimensions: ${stats.originalDim}\n`;
     text += `Final sample space: ${event.spaces.sample.n_parameters}\n`;
@@ -241,7 +111,16 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
     });
 
     return text;
-  };
+  }, [event, stats, activeSteps]);
+
+  // 空状态
+  if (!event || !stats) {
+    return (
+      <div style={{ width: '100%', background: '#fff', padding: '40px', borderRadius: '8px', textAlign: 'center' }}>
+        <p style={{ color: '#999' }}>No compression data available</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: '100%', background: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
@@ -249,15 +128,50 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
         Compression Summary
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        {/* Panel 1: Dimension Reduction */}
         <div>
-          <ReactECharts option={getDimensionReductionOption()} style={{ height: '350px' }} />
+          <ReactECharts 
+            option={dimReductionOption} 
+            style={{ height: chartHeights.medium }}
+            notMerge={true}
+            lazyUpdate={true}
+          />
         </div>
+        
+        {/* Panel 2: Compression Ratio */}
         <div>
-          <ReactECharts option={getCompressionRatioOption()} style={{ height: '350px' }} />
+          <ReactECharts 
+            option={ratioOption} 
+            style={{ height: chartHeights.medium }}
+            notMerge={true}
+            lazyUpdate={true}
+          />
         </div>
+        
+        {/* Panel 3: Range Compression Stats */}
         <div>
-          <ReactECharts option={getRangeCompressionStatsOption()} style={{ height: '350px' }} />
+          {rangeCompressionData ? (
+            <ReactECharts 
+              option={rangeStatsOption} 
+              style={{ height: chartHeights.medium }}
+              notMerge={true}
+              lazyUpdate={true}
+            />
+          ) : (
+            <div style={{ 
+              height: chartHeights.medium, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              background: '#fafafa',
+              borderRadius: '4px',
+            }}>
+              <p style={{ color: '#999' }}>No range/quantization compression data</p>
+            </div>
+          )}
         </div>
+        
+        {/* Panel 4: Text Summary */}
         <div
           style={{
             padding: '20px',
@@ -268,10 +182,10 @@ const CompressionSummary: React.FC<CompressionSummaryProps> = ({ data }) => {
             fontSize: '11px',
             whiteSpace: 'pre-wrap',
             overflowY: 'auto',
-            height: '350px',
+            height: chartHeights.medium,
           }}
         >
-          {getSummaryText()}
+          {getSummaryText}
         </div>
       </div>
     </div>
