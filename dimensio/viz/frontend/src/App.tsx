@@ -14,6 +14,7 @@ import React from 'react';
 import { useCompressionData } from './hooks';
 import CompressionSummary from './components/CompressionSummary';
 import MultiStepUpload from './components/MultiStepUpload';
+import LargeDataChartDemo from './components/LargeDataChartDemo';
 import {
   RangeCompressionContainer,
   ParameterImportanceContainer,
@@ -68,6 +69,10 @@ const App: React.FC = () => {
       {/* Main - 容器组件自动处理可见性 */}
       <main className="app-main">
         <CompressionSummary data={data!} />
+        
+        {/* 🚀 大数据图表懒加载演示 */}
+        {/* <LargeDataChartDemo /> */}
+        
         <RangeCompressionContainer data={data!} />
         <ParameterImportanceContainer data={data!} />
         <DimensionEvolutionContainer data={data!} />

@@ -132,3 +132,61 @@ export interface UseChartConfigReturn {
   /** 错误信息 */
   error: string | null;
 }
+
+// ============================================
+// useLazyChart Hook 类型 (懒加载)
+// ============================================
+
+/** useLazyChart Hook 配置选项 */
+export interface UseLazyChartOptions {
+  /** 触发阈值，0.1 表示元素 10% 可见时触发 */
+  threshold?: number;
+  /** 根元素边距，用于提前加载 */
+  rootMargin?: string;
+  /** 可见时的回调函数 */
+  onVisible?: () => void;
+  /** 是否禁用懒加载（直接显示） */
+  disabled?: boolean;
+}
+
+/** useLazyChart Hook 返回类型 */
+export interface UseLazyChartReturn {
+  /** 需要绑定到容器元素的 ref */
+  ref: React.RefObject<HTMLDivElement>;
+  /** 当前是否可见 */
+  isVisible: boolean;
+  /** 是否已经加载过（用于防止重复加载） */
+  hasLoaded: boolean;
+}
+
+// ============================================
+// useChunkedData Hook 类型 (分片渲染)
+// ============================================
+
+/** useChunkedData Hook 配置选项 */
+export interface UseChunkedDataOptions {
+  /** 每次渲染的数据块大小 */
+  chunkSize?: number;
+  /** 是否启用分片加载（数据量小时可禁用） */
+  enabled?: boolean;
+  /** 数据量阈值，小于此值时禁用分片 */
+  threshold?: number;
+  /** 渲染完成回调 */
+  onComplete?: () => void;
+  /** requestIdleCallback 超时时间(ms) */
+  idleTimeout?: number;
+}
+
+/** useChunkedData Hook 返回类型 */
+export interface UseChunkedDataReturn<T> {
+  /** 当前已渲染的数据 */
+  displayData: T[];
+  /** 渲染进度 (0-100) */
+  progress: number;
+  /** 是否渲染完成 */
+  isComplete: boolean;
+  /** 是否正在加载 */
+  isLoading: boolean;
+  /** 重置并重新开始加载 */
+  reset: () => void;
+}

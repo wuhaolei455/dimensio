@@ -49,7 +49,19 @@ export {
   type UseChartVisibilityReturn,
   type UseChartConfigParams,
   type UseChartConfigReturn,
+  // 大数据优化 Hooks 类型
+  type UseLazyChartOptions,
+  type UseLazyChartReturn,
+  type UseChunkedDataOptions,
+  type UseChunkedDataReturn,
 } from './hooks';
+
+// LazyChart 组件类型
+export {
+  type LazyChartProps,
+  type ChartPlaceholderProps,
+  type LoadingBarProps,
+} from './lazyChart';
 
 // ============================================
 // 向后兼容的类型别名
